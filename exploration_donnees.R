@@ -55,3 +55,8 @@ relation.dat[relation.dat$idimplantation == 26,]
 
 
 ## 2 date, duree ================
+
+# ou on a des NA
+sapply(relation.dat, anyNA)
+# on va les compter
+apply(relation.dat, 2, function(x)length(x[is.na(x)]))

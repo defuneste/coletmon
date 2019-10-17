@@ -268,24 +268,121 @@ div.tocify {
 
 <div id="statistiques-descriptives-des-données" class="section level1">
 <h1><span class="header-section-number">1</span> Statistiques descriptives des données</h1>
-<div id="chargement-des-données" class="section level2">
-<h2><span class="header-section-number">1.1</span> Chargement des données</h2>
+<div id="chargement-des-données-et-prise-en-main" class="section level2">
+<h2><span class="header-section-number">1.1</span> Chargement des données et prise en main</h2>
+<div id="chargement" class="section level3">
+<h3><span class="header-section-number">1.1.1</span> Chargement</h3>
+<pre class="r"><code>implantation.dat &lt;- readRDS(&quot;data/T0impl.Rds&quot;)
+fait.dat &lt;- readRDS(&quot;data/T0New.Rds&quot;)
+# une exraction des relations
+relation.dat &lt;- fait.dat[fait.dat$caracNew == &quot;Relations&quot; ,]</code></pre>
 <p>Les données sont regroupées en deux tableaux :</p>
 <ul>
 <li>“T0impl.Rds” contenant les implantations,</li>
 <li>“T0New.Rds” contenant les faits.</li>
 </ul>
 <p>C’est du second que l’on tire les relations.</p>
-<pre class="r"><code>implantation.dat &lt;- readRDS(&quot;data/T0impl.Rds&quot;)
-fait.dat &lt;- readRDS(&quot;data/T0New.Rds&quot;)
-# une exraction des relations
-relation.dat &lt;- fait.dat[fait.dat$caracNew == &quot;Relations&quot; ,]</code></pre>
-<p>Il faut specifier les encoding de 3 colonnes qui sont en “Latin1” alors que le reste semble être en UTF8</p>
+</div>
+<div id="prise-en-main" class="section level3">
+<h3><span class="header-section-number">1.1.2</span> Prise en main</h3>
 <pre class="r"><code># l'encoding semble en UTF8 et latin1 en fonction des colonnes/sources de la données
 # la fonction Encoding permet de le specifier
 Encoding(fait.dat$usual_name) &lt;- &quot;latin1&quot;
 Encoding(fait.dat$caracteristique) &lt;- &quot;latin1&quot;
 Encoding(fait.dat$linked_implantation_name) &lt;- &quot;latin1&quot;</code></pre>
+<p>Il faut specifier les encoding de 3 colonnes qui sont en “Latin1” alors que le reste semble être en UTF8</p>
+<pre class="r"><code>knitr::kable(apply(relation.dat, 2, function(x)length(x[is.na(x)])))</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th align="right">x</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>idfactoid</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td>idimplantation</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td>usual_name</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td>caracteristique</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td>caracNew</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td>modAgreg</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td>modalite</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td>fklinked_implantation</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td>linked_implantation_name</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td>date_start_min</td>
+<td align="right">210</td>
+</tr>
+<tr class="odd">
+<td>date_start_max</td>
+<td align="right">210</td>
+</tr>
+<tr class="even">
+<td>date_stop_min</td>
+<td align="right">206</td>
+</tr>
+<tr class="odd">
+<td>date_stop_max</td>
+<td align="right">206</td>
+</tr>
+<tr class="even">
+<td>lat</td>
+<td align="right">72</td>
+</tr>
+<tr class="odd">
+<td>lng</td>
+<td align="right">72</td>
+</tr>
+<tr class="even">
+<td>location_granularity</td>
+<td align="right">72</td>
+</tr>
+<tr class="odd">
+<td>Diocese</td>
+<td align="right">11</td>
+</tr>
+<tr class="even">
+<td>date_startC</td>
+<td align="right">210</td>
+</tr>
+<tr class="odd">
+<td>date_stopC</td>
+<td align="right">206</td>
+</tr>
+<tr class="even">
+<td>DureeFact</td>
+<td align="right">210</td>
+</tr>
+</tbody>
+</table>
+</div>
 </div>
 <div id="description-des-relations" class="section level2">
 <h2><span class="header-section-number">1.2</span> Description des relations</h2>
@@ -370,6 +467,9 @@ Encoding(fait.dat$linked_implantation_name) &lt;- &quot;latin1&quot;</code></pre
 </tr>
 </tbody>
 </table>
+</div>
+<div id="modalités-de-relations-dans-le-temps" class="section level3">
+<h3><span class="header-section-number">1.2.2</span> Modalités de relations dans le temps</h3>
 </div>
 </div>
 </div>

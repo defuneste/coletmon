@@ -20,7 +20,16 @@ library(dplyr) # manip données
 
 # Statistiques descriptives des données
 
-## Chargement des données
+## Chargement des données et prise en main
+
+### Chargement 
+
+```{r chargement}
+implantation.dat <- readRDS("data/T0impl.Rds")
+fait.dat <- readRDS("data/T0New.Rds")
+# une exraction des relations
+relation.dat <- fait.dat[fait.dat$caracNew == "Relations" ,]
+```
 
 Les données sont regroupées en deux tableaux :
 
@@ -29,14 +38,7 @@ Les données sont regroupées en deux tableaux :
 
 C'est du second que l'on tire les relations.
 
-```{r 1.1 chargement}
-implantation.dat <- readRDS("data/T0impl.Rds")
-fait.dat <- readRDS("data/T0New.Rds")
-# une exraction des relations
-relation.dat <- fait.dat[fait.dat$caracNew == "Relations" ,]
-```
-
-Il faut specifier les encoding de 3 colonnes qui sont en "Latin1" alors que le reste semble être en UTF8
+### Prise en main
 
 ```{r bon encoding}
 # l'encoding semble en UTF8 et latin1 en fonction des colonnes/sources de la données
@@ -45,6 +47,13 @@ Encoding(fait.dat$usual_name) <- "latin1"
 Encoding(fait.dat$caracteristique) <- "latin1"
 Encoding(fait.dat$linked_implantation_name) <- "latin1"
 ```
+
+Il faut specifier les encoding de 3 colonnes qui sont en "Latin1" alors que le reste semble être en UTF8
+
+```{r presence Na}
+knitr::kable(apply(relation.dat, 2, function(x)length(x[is.na(x)])))
+```
+
 
 ## Description des relations
 
@@ -63,7 +72,7 @@ knitr::kable(t(table(relation.dat$modAgreg, relation.dat$modalite)),
              caption = "(ref:modalite-caption)")
 ```
 
-### Modalité dans le temps
+### Modalités de relations dans le temps
 
 
 
