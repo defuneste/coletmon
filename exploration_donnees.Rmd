@@ -78,3 +78,19 @@ knitr::kable(t(table(relation.dat$modAgreg, relation.dat$modalite)),
 
 
 # Premiers graphes sur les relations
+
+## en prenant le tout 
+
+```{r premier_graph}
+library(igraph)
+relation <- relation.dat[relation.dat$modAgreg != "A",] # on enleve les doublons
+dim(relation) # verif
+names(relation) 
+# one ne garde que les noms
+relation <- subset(relation, select =  c("usual_name", "linked_implantation_name"))
+# objet de graphs
+graph_ensemble <- graph.edgelist(as.matrix(relation), directed = FALSE)
+```
+
+On obtient un graphe peut lisible avec `r gsize(graph_ensemble)` liens et `r gorder(graph_ensemble)` noeuds.
+

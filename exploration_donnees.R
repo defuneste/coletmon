@@ -11,6 +11,7 @@ library(sf) # package spatial
 library(dplyr) # manip données
 library(lubridate) # les dates 
 library(forcats) # pour les facteurs
+library(igraph) # package classic pour les graphs
 
 
 ## 2 - Les données ================
@@ -60,3 +61,36 @@ relation.dat[relation.dat$idimplantation == 26,]
 sapply(relation.dat, anyNA)
 # on va les compter
 apply(relation.dat, 2, function(x)length(x[is.na(x)]))
+
+
+##.###################################################################################33
+## III. Graphs ====
+##.#################################################################################33
+
+## 1 - Vertex/hedge ================
+
+#on va viltrer pour n'avoir que deux colonnes de relation
+
+relation <- relation.dat[relation.dat$modAgreg != "A",] # on enleve les doublons
+dim(relation) # verif
+names(relation) 
+# one ne garde que les noms
+relation <- subset(relation, select =  c("usual_name", "linked_implantation_name"))
+# objet de graphs
+graph_ensemble <- graph.edgelist(as.matrix(relation), directed = FALSE)
+
+# oh que c'est laid
+plot(graph_ensemble)
+
+# Subset vertices and edges
+V(graph_ensemble)
+E(graph_ensemble)
+
+# compte le nombre de liens
+gsize(graph_ensemble)
+
+# compte le nombre de noeuds
+gorder(graph_ensemble)
+
+# une indexation sur les noeux avec "cîteaux (2)"
+E(graph_ensemble)[[inc("Cîteaux (2)")]]
