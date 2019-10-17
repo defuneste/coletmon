@@ -22,6 +22,13 @@ library(dplyr) # manip données
 
 ## Chargement des données
 
+Les données sont regroupées en deux tableaux :
+
+* "T0impl.Rds" contenant les implantations,
+* "T0New.Rds" contenant les faits.
+
+C'est du second que l'on tire les relations.
+
 ```{r 1.1 chargement}
 implantation.dat <- readRDS("data/T0impl.Rds")
 fait.dat <- readRDS("data/T0New.Rds")
@@ -33,18 +40,31 @@ Il faut specifier les encoding de 3 colonnes qui sont en "Latin1" alors que le r
 
 ```{r bon encoding}
 # l'encoding semble en UTF8 et latin1 en fonction des colonnes/sources de la données
-# la fonction encoding permet de le specifier
+# la fonction Encoding permet de le specifier
 Encoding(fait.dat$usual_name) <- "latin1"
 Encoding(fait.dat$caracteristique) <- "latin1"
 Encoding(fait.dat$linked_implantation_name) <- "latin1"
 ```
 
+## Description des relations
 
-On obtient `r nrow(relation.dat)` factoides avec une `relation`.
+### Modalité des relations
 
-```{r 1.2 ventilation modAgreg_modalite}
-knitr::kable(t(table(relation.dat$modAgreg, relation.dat$modalite)))
+On obtient `r nrow(relation.dat)` factoides avec une `relation`. Le tableau \@ref(tab:modalite) répartit `modalite` en fonction des `modAgreg`. `H` de `modAgreg` ne correspond qu'aux associations de prière (`r nrow(relation.dat[relation.dat$modalite == "Association de prière",])`)) et `X` ne correspond qu'aux déplacements d'institution (`r nrow(relation.dat[relation.dat$modalite == "Déplacement d'institution",])`). `A` et `D` correspondent aux relations ascendantes et descendantes comprises entre trois couples : 
+
+* `À la collation de / Droit de patronage`, 
+* `Appartient / à Possède` et 
+* `Filiation ascendante directe / Filiation descendante`.
+
+(ref:modalite-caption) Ventilation de modAgreg en fonction de modalite
+
+```{r, modalite}
+knitr::kable(t(table(relation.dat$modAgreg, relation.dat$modalite)),
+             caption = "(ref:modalite-caption)")
 ```
+
+### Modalité dans le temps
+
 
 
 

@@ -1,7 +1,7 @@
 # script d'exploration des données pour le projet col&mon
 # 16-10-2019
 ##.###################################################################################33
-## I. Chargement des données de l'xp ====
+## I. Chargement des données de col&mon ====
 ##.#################################################################################33
 
 ## 1 - Les bibliotheques ================
@@ -33,15 +33,25 @@ Encoding(fait.dat$caracteristique) <- "latin1"
 Encoding(fait.dat$linked_implantation_name) <- "latin1"
            
 
-
-
 # une exraction des relations
 relation.dat <- fait.dat[fait.dat$caracNew == "Relations" ,]
 dim(relation.dat)
 
+
+##.###################################################################################33
+## II. Exploration des donnees ====
+##.#################################################################################33
+
+## 1 - Modalite/modAgreg ================
+
+# un peu d'exploration
 table(relation.dat$modAgreg)
 table(relation.dat$modalite)
 
 t(table(relation.dat$modAgreg, relation.dat$modalite))
 
-relation.dat[relation.dat$idimplantation == 24,]
+# on regarde pour des implantation fameuse
+relation.dat[relation.dat$idimplantation == 26,]
+
+
+## 2 date, duree ================
