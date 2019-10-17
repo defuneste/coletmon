@@ -15,11 +15,33 @@ library(forcats) # pour les facteurs
 
 ## 2 - Les données ================
 
-#celui ci est un df
-fait.dat <- readRDS("data/T0New.Rds")
-class(fait.dat)
-
-
 #celui ci est un tible
 implantation.dat <- readRDS("data/T0impl.Rds")
 class(implantation.dat)
+
+
+#celui ci est un df
+fait.dat <- readRDS("data/T0New.Rds")
+class(fait.dat)
+summary(fait.dat)
+unique(fait.dat$caracNew)
+
+# on essaie d'avoir un bon encoding
+
+Encoding(fait.dat$usual_name) <- "latin1"
+Encoding(fait.dat$caracteristique) <- "latin1"
+Encoding(fait.dat$linked_implantation_name) <- "latin1"
+           
+
+
+
+# une exraction des relations
+relation.dat <- fait.dat[fait.dat$caracNew == "Relations" ,]
+dim(relation.dat)
+
+table(relation.dat$modAgreg)
+table(relation.dat$modalite)
+
+t(table(relation.dat$modAgreg, relation.dat$modalite))
+
+relation.dat[relation.dat$idimplantation == 24,]

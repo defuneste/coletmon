@@ -9,6 +9,7 @@ output:
         toc_float: true
         number_sections: true
         fig_caption: yes
+        code_folding: hide
     
 ---
 
@@ -19,8 +20,30 @@ library(dplyr) # manip données
 
 # Statistiques descriptives des données
 
-```{r, code_folding: hide}
+## Chargement des données
+
+```{r 1.1 chargement}
 implantation.dat <- readRDS("data/T0impl.Rds")
+fait.dat <- readRDS("data/T0New.Rds")
+# une exraction des relations
+relation.dat <- fait.dat[fait.dat$caracNew == "Relations" ,]
+```
+
+Il faut specifier les encoding de 3 colonnes qui sont en "Latin1" alors que le reste semble être en UTF8
+
+```{r bon encoding}
+# l'encoding semble en UTF8 et latin1 en fonction des colonnes/sources de la données
+# la fonction encoding permet de le specifier
+Encoding(fait.dat$usual_name) <- "latin1"
+Encoding(fait.dat$caracteristique) <- "latin1"
+Encoding(fait.dat$linked_implantation_name) <- "latin1"
+```
+
+
+On obtient `r nrow(relation.dat)` factoides avec une `relation`.
+
+```{r 1.2 ventilation modAgreg_modalite}
+knitr::kable(t(table(relation.dat$modAgreg, relation.dat$modalite)))
 ```
 
 
