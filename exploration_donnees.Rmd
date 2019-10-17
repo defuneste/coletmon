@@ -1,0 +1,28 @@
+---
+title: "Exploration Relation Col&Mon"
+author: "Olivier"
+date: "17 octobre 2019"
+output: 
+    bookdown::html_document2:
+        theme: readable
+        toc: true
+        toc_float: true
+        number_sections: true
+        fig_caption: yes
+    
+---
+
+```{r setup, include = FALSE}
+library(dplyr) # manip données
+```
+
+
+# Statistiques descriptives des données
+
+```{r, code_folding: hide}
+implantation.dat <- readRDS("data/T0impl.Rds")
+```
+
+
+
+# Premiers graphes sur les relations

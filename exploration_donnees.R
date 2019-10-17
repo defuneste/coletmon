@@ -15,10 +15,11 @@ library(forcats) # pour les facteurs
 
 ## 2 - Les données ================
 
-#celui ci est un tible
-fait.dat <- readRDS("data/T0impl.Rds")
+#celui ci est un df
+fait.dat <- readRDS("data/T0New.Rds")
 class(fait.dat)
 
-#celui ci est un df
-implantation.dat <- readRDS("data/T0New.Rds")
+
+#celui ci est un tible
+implantation.dat <- readRDS("data/T0impl.Rds")
 class(implantation.dat)
