@@ -33,6 +33,13 @@ Encoding(fait.dat$usual_name) <- "latin1"
 Encoding(fait.dat$caracteristique) <- "latin1"
 Encoding(fait.dat$linked_implantation_name) <- "latin1"
 
+
+## 3 - export/imporrt en csv  ================
+# j'ai du rajouter cette etape car knitr a du mal à gerer le multi encoding
+# write.csv(fait.dat, "data/fait.txt")
+fait.dat <- read.csv("data/fait.txt")
+
+
 # une exraction des relations
 relation.dat <- fait.dat[fait.dat$caracNew == "Relations" ,]
 dim(relation.dat)
@@ -63,6 +70,22 @@ relation_na.dat <- as.data.frame(apply(relation.dat, 2, function(x)length(x[is.n
 names(relation_na.dat) <- "Nbr_NA"
 relation_na.dat$variables <- rownames(relation_na.dat)
 
+#exploration des données manquantes dans les dates
+NA_date <- relation.dat[is.na(relation.dat$date_start_min),]
+
+# ventilation des NA dans modAgreg
+table(NA_date$modAgreg)
+
+#on regarde les lieux descendant present comme descendant par rapport au id des lieux d'ascendant
+NA_date$fklinked_implantation[NA_date$modAgreg == "D"] %in% NA_date$idimplantation[NA_date$modAgreg == "A"]
+
+NA_date[NA_date$modAgreg == "D",][76,]
+NA_date[NA_date$idimplantation == 2483,]
+
+rbind(NA_date[NA_date$modAgreg == "D",][76,],
+relation.dat[relation.dat$idimplantation ==2483,])
+
+table(NA_date$usual_name)
 
 ##.###################################################################################33
 ## III. Graphs ====

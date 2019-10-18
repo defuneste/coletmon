@@ -281,7 +281,8 @@ div.tocify {
 <div id="chargement" class="section level3">
 <h3><span class="header-section-number">1.1.1</span> Chargement</h3>
 <pre class="r"><code>implantation.dat &lt;- readRDS(&quot;data/T0impl.Rds&quot;)
-fait.dat &lt;- readRDS(&quot;data/T0New.Rds&quot;)
+# fait.dat &lt;- readRDS(&quot;data/T0New.Rds&quot;)
+fait.dat &lt;- read.csv(&quot;data/fait.txt&quot;, stringsAsFactors = FALSE) # besoin d'ajouter cela sinon il me garde tous les niveaux des facteurs
 # une exraction des relations
 relation.dat &lt;- fait.dat[fait.dat$caracNew == &quot;Relations&quot; ,]</code></pre>
 <p>Les données sont regroupées en deux tableaux :</p>
@@ -295,26 +296,28 @@ relation.dat &lt;- fait.dat[fait.dat$caracNew == &quot;Relations&quot; ,]</code>
 <h3><span class="header-section-number">1.1.2</span> Prise en main</h3>
 <pre class="r"><code># l'encoding semble en UTF8 et latin1 en fonction des colonnes/sources de la données
 # la fonction Encoding permet de le specifier
-Encoding(fait.dat$usual_name) &lt;- &quot;latin1&quot;
-Encoding(fait.dat$caracteristique) &lt;- &quot;latin1&quot;
-Encoding(fait.dat$linked_implantation_name) &lt;- &quot;latin1&quot;</code></pre>
-<p>Il faut specifier les encoding de 3 colonnes qui sont en “Latin1” alors que le reste semble être en UTF8</p>
-<p>Le tableau <a href="#tab:presenceNa">1.1</a> reprend les nombre de données manquantes par variables.</p>
-<pre class="r"><code>relation_na.dat &lt;- as.data.frame(apply(relation.dat, 2, function(x)length(x[is.na(x)])))
-names(relation_na.dat) &lt;- &quot;Nbr_NA&quot;
+# Encoding(fait.dat$usual_name) &lt;- &quot;latin1&quot;
+# Encoding(fait.dat$caracteristique) &lt;- &quot;latin1&quot;
+# Encoding(fait.dat$linked_implantation_name) &lt;- &quot;latin1&quot;</code></pre>
+<p>Il faut specifier les encoding de 3 colonnes qui sont en “Latin1” alors que le reste semble être en UTF8. au final knitr semble avoir un problème avec du “multi encoding”, j’ai donc fait un export/import le tout en UTF8.</p>
+<p>Le tableau <a href="#tab:presenceNa">1.1</a> reprend les nombre de données manquantes par variables. L’absence la plus importante est sur les dates (210 et 206 manquantes), puis sur la localisation (72 NA) avec lat/long et granularité et sur les diocése (11 NA).</p>
+<pre class="r"><code># un apply, passer en df qui compte le nombre de NA par colonne 
+relation_na.dat &lt;- as.data.frame(apply(relation.dat, 2, function(x)length(x[is.na(x)])))
+names(relation_na.dat) &lt;- &quot;Nbr_NA&quot; # on renome puis on fait une deuxième var qui prend les rowname
 relation_na.dat$variables &lt;- rownames(relation_na.dat)
 rownames(relation_na.dat) &lt;- NULL
 
+# une bidouille pour avoir un titre de tableau avec ref
 cat(&quot;&lt;tableau&gt;&quot;,paste0(&quot;&lt;caption&gt;&quot;, &quot;(#tab:presenceNa)&quot;, ' Nombre de données manquantes par variabes', &quot;&lt;/caption&gt;&quot;),&quot;&lt;/tableau&gt;&quot;, sep =&quot;\n&quot;)</code></pre>
 <tableau>
 <caption>
 <span id="tab:presenceNa">Table 1.1: </span> Nombre de données manquantes par variabes
 </caption>
 <p></tableau></p>
-<pre class="r"><code>DT::datatable(relation_na.dat)</code></pre>
-<div id="htmlwidget-c783ebdb13bdf8583e74" style="width:100%;height:auto;" class="datatables html-widget"></div>
-<script type="application/json" data-for="htmlwidget-c783ebdb13bdf8583e74">{"x":{"filter":"none","data":[["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20"],[0,0,0,0,0,0,0,0,0,210,210,206,206,72,72,72,11,210,206,210],["idfactoid","idimplantation","usual_name","caracteristique","caracNew","modAgreg","modalite","fklinked_implantation","linked_implantation_name","date_start_min","date_start_max","date_stop_min","date_stop_max","lat","lng","location_granularity","Diocese","date_startC","date_stopC","DureeFact"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>Nbr_NA<\/th>\n      <th>variables<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-right","targets":1},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
-<pre class="r"><code>#knitr::kable(apply(relation.dat, 2, function(x)length(x[is.na(x)])))</code></pre>
+<pre class="r"><code>DT::datatable(relation_na.dat) </code></pre>
+<div id="htmlwidget-4f1eb169952224f3df18" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-4f1eb169952224f3df18">{"x":{"filter":"none","data":[["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21"],[0,0,0,0,0,0,0,0,0,0,210,210,206,206,72,72,72,11,210,206,210],["X","idfactoid","idimplantation","usual_name","caracteristique","caracNew","modAgreg","modalite","fklinked_implantation","linked_implantation_name","date_start_min","date_start_max","date_stop_min","date_stop_max","lat","lng","location_granularity","Diocese","date_startC","date_stopC","DureeFact"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>Nbr_NA<\/th>\n      <th>variables<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-right","targets":1},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
+<pre class="r"><code>#knitr::kable(apply(relation.dat, 2, function(x)length(x[is.na(x)]))) # la version à l'arrache knitr</code></pre>
 </div>
 </div>
 <div id="description-des-relations" class="section level2">
@@ -403,6 +406,128 @@ cat(&quot;&lt;tableau&gt;&quot;,paste0(&quot;&lt;caption&gt;&quot;, &quot;(#tab:
 </div>
 <div id="modalités-de-relations-dans-le-temps" class="section level3">
 <h3><span class="header-section-number">1.2.2</span> Modalités de relations dans le temps</h3>
+<div id="exploration-des-données-manquantes-dans-les-dates" class="section level4">
+<h4><span class="header-section-number">1.2.2.1</span> Exploration des données manquantes dans les dates</h4>
+<p>Il y a 210 et 206 valeurs manquantes au niveau des dates (cf. tableau <a href="#tab:presenceNa">1.1</a>). Ces valeurs manquantes sont consistantes dans les 6 champs de de description des dates : une absence de donnée en <code>date_start_XX</code> se retrouve en <code>date_stop_XX</code> et donc dans la fourchette produite.</p>
+<p>Il y a cependant 4 exceptions, où l’on a une <code>date_stop</code>, correspondant à deux couples A/D :</p>
+<pre class="r"><code>NA_date &lt;- relation.dat[is.na(relation.dat$date_start_min),]
+knitr::kable(NA_date[!is.na(NA_date$date_stop_max),c(2:4,7,13)]) # attention ici une indexation sur num de colonnes</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th align="right">idfactoid</th>
+<th align="right">idimplantation</th>
+<th align="left">usual_name</th>
+<th align="left">modAgreg</th>
+<th align="right">date_stop_min</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>12113</td>
+<td align="right">43491</td>
+<td align="right">2399</td>
+<td align="left">Saint-Georges-en-Couzan, Saint-Georges (église dépendante)</td>
+<td align="left">A</td>
+<td align="right">1790</td>
+</tr>
+<tr class="even">
+<td>12114</td>
+<td align="right">43492</td>
+<td align="right">1846</td>
+<td align="left">Lyon, Saint-Nizier</td>
+<td align="left">D</td>
+<td align="right">1790</td>
+</tr>
+<tr class="odd">
+<td>12200</td>
+<td align="right">43578</td>
+<td align="right">2448</td>
+<td align="left">Saint-Alban, Saint-Alban (église dépendante)</td>
+<td align="left">A</td>
+<td align="right">1790</td>
+</tr>
+<tr class="even">
+<td>12242</td>
+<td align="right">43620</td>
+<td align="right">1646</td>
+<td align="left">Cerdon, Saint-Jean-Baptiste</td>
+<td align="left">D</td>
+<td align="right">1790</td>
+</tr>
+</tbody>
+</table>
+<p>En regardant la répartition des valeurs manquantes temporelles en fonction de <code>modalite</code> (<a href="#tab:Namodalite">1.3</a>) on peut remarquer qu’un couple A/D n’est pas complet (60/61).</p>
+
+<pre class="r"><code>knitr::kable(table(NA_date$modalite), caption = &quot;Répartition des NA temporelles dans les modalite&quot;)</code></pre>
+<table>
+<caption><span id="tab:Namodalite">Table 1.3: </span>Répartition des NA temporelles dans les modalite</caption>
+<thead>
+<tr class="header">
+<th align="left">Var1</th>
+<th align="right">Freq</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">À la collation de</td>
+<td align="right">60</td>
+</tr>
+<tr class="even">
+<td align="left">Appartient à</td>
+<td align="right">19</td>
+</tr>
+<tr class="odd">
+<td align="left">Association de prière</td>
+<td align="right">47</td>
+</tr>
+<tr class="even">
+<td align="left">Droit de patronage</td>
+<td align="right">61</td>
+</tr>
+<tr class="odd">
+<td align="left">Filiation ascendante directe</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="left">Filiation descendante</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="left">Possède</td>
+<td align="right">19</td>
+</tr>
+</tbody>
+</table>
+<p>Il me semble que c’est ce couple, Hélene peux tu regarder ? Je rajoute les valeurs ?</p>
+<pre class="r"><code>rbind(NA_date[NA_date$modAgreg == &quot;D&quot;,][76,],
+relation.dat[relation.dat$idimplantation == 2483,]) # attention c'est une indexation par rapport à un emplacement </code></pre>
+<pre><code>##           X idfactoid idimplantation
+## 12293 12293     43672           2131
+## 12292 12292     43671           2483
+##                                                        usual_name
+## 12293                          Charleville-Mézières, Saint-Pierre
+## 12292 Les-Mazures, Saint-Remi-Sainte-Gertrude (église dépendante)
+##              caracteristique  caracNew modAgreg           modalite
+## 12293 Relations - Dépendance Relations        D Droit de patronage
+## 12292 Relations - Dépendance Relations        A  À la collation de
+##       fklinked_implantation
+## 12293                  2483
+## 12292                  2131
+##                                          linked_implantation_name
+## 12293 Les-Mazures, Saint-Remi-Sainte-Gertrude (église dépendante)
+## 12292                          Charleville-Mézières, Saint-Pierre
+##       date_start_min date_start_max date_stop_min date_stop_max      lat
+## 12293             NA             NA            NA            NA 49.76208
+## 12292           1190           1190          1800          1800 49.88855
+##            lng location_granularity Diocese date_startC date_stopC
+## 12293 4.726096                  rue   Reims          NA         NA
+## 12292 4.626041              precise   Reims        1190       1800
+##       DureeFact
+## 12293        NA
+## 12292       610</code></pre>
+</div>
 </div>
 </div>
 </div>

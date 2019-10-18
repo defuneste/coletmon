@@ -26,7 +26,8 @@ library(dplyr) # manip données
 
 ```{r chargement}
 implantation.dat <- readRDS("data/T0impl.Rds")
-fait.dat <- readRDS("data/T0New.Rds")
+# fait.dat <- readRDS("data/T0New.Rds")
+fait.dat <- read.csv("data/fait.txt", stringsAsFactors = FALSE) # besoin d'ajouter cela sinon il me garde tous les niveaux des facteurs
 # une exraction des relations
 relation.dat <- fait.dat[fait.dat$caracNew == "Relations" ,]
 ```
@@ -43,26 +44,28 @@ C'est du second que l'on tire les relations.
 ```{r bon encoding}
 # l'encoding semble en UTF8 et latin1 en fonction des colonnes/sources de la données
 # la fonction Encoding permet de le specifier
-Encoding(fait.dat$usual_name) <- "latin1"
-Encoding(fait.dat$caracteristique) <- "latin1"
-Encoding(fait.dat$linked_implantation_name) <- "latin1"
+# Encoding(fait.dat$usual_name) <- "latin1"
+# Encoding(fait.dat$caracteristique) <- "latin1"
+# Encoding(fait.dat$linked_implantation_name) <- "latin1"
 ```
 
-Il faut specifier les encoding de 3 colonnes qui sont en "Latin1" alors que le reste semble être en UTF8
+Il faut specifier les encoding de 3 colonnes qui sont en "Latin1" alors que le reste semble être en UTF8. au final knitr semble avoir un problème avec du "multi encoding", j'ai donc fait un export/import le tout en UTF8.
 
 
 Le tableau \@ref(tab:presenceNa) reprend les nombre de données manquantes par variables. L'absence la plus importante est sur les dates (210 et 206 manquantes), puis sur la localisation  (72 NA) avec lat/long et granularité et sur les diocése (11 NA). 
 
 ```{r, presenceNa, results="asis" }
+# un apply, passer en df qui compte le nombre de NA par colonne 
 relation_na.dat <- as.data.frame(apply(relation.dat, 2, function(x)length(x[is.na(x)])))
-names(relation_na.dat) <- "Nbr_NA"
+names(relation_na.dat) <- "Nbr_NA" # on renome puis on fait une deuxième var qui prend les rowname
 relation_na.dat$variables <- rownames(relation_na.dat)
 rownames(relation_na.dat) <- NULL
 
+# une bidouille pour avoir un titre de tableau avec ref
 cat("<tableau>",paste0("<caption>", "(#tab:presenceNa)", ' Nombre de données manquantes par variabes', "</caption>"),"</tableau>", sep ="\n")
 
-DT::datatable(relation_na.dat)
-#knitr::kable(apply(relation.dat, 2, function(x)length(x[is.na(x)])))
+DT::datatable(relation_na.dat) 
+#knitr::kable(apply(relation.dat, 2, function(x)length(x[is.na(x)]))) # la version à l'arrache knitr
 ```
 
 
@@ -85,7 +88,31 @@ knitr::kable(t(table(relation.dat$modAgreg, relation.dat$modalite)),
 
 ### Modalités de relations dans le temps
 
+#### Exploration des données manquantes dans les dates 
 
+Il y a 210 et 206 valeurs manquantes au niveau des dates (cf. tableau \@ref(tab:presenceNa)). Ces valeurs manquantes sont consistantes dans les 6 champs de de description des dates : une absence de donnée en `date_start_XX` se retrouve en `date_stop_XX` et donc dans la fourchette produite.
+
+Il y a cependant 4 exceptions, où l'on a une `date_stop`, correspondant à deux couples A/D : 
+
+```{r}
+NA_date <- relation.dat[is.na(relation.dat$date_start_min),]
+knitr::kable(NA_date[!is.na(NA_date$date_stop_max),c(2:4,7,13)]) # attention ici une indexation sur num de colonnes
+```
+
+En regardant la répartition des valeurs manquantes temporelles en fonction de `modalite` (\@ref(tab:Namodalite)) on peut remarquer qu'un couple A/D n'est pas complet (60/61). 
+
+(ref:Namodalite-caption) Répartition des NA temporelles dans les modalite
+
+```{r, Namodalite}
+knitr::kable(table(NA_date$modalite), caption = "(ref:Namodalite-caption)")
+```
+
+Il me semble que c'est ce couple, Hélene peux tu regarder ? Je rajoute les valeurs ?
+
+```{r}
+rbind(NA_date[NA_date$modAgreg == "D",][76,],
+relation.dat[relation.dat$idimplantation == 2483,]) # attention c'est une indexation par rapport à un emplacement 
+```
 
 
 # Premiers graphes sur les relations
