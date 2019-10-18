@@ -280,9 +280,10 @@ div.tocify {
 <h2><span class="header-section-number">1.1</span> Chargement des données et prise en main</h2>
 <div id="chargement" class="section level3">
 <h3><span class="header-section-number">1.1.1</span> Chargement</h3>
-<pre class="r"><code>implantation.dat &lt;- readRDS(&quot;data/T0impl.Rds&quot;)
+<pre class="r"><code>#implantation.dat &lt;- readRDS(&quot;data/T0impl.Rds&quot;)
 # fait.dat &lt;- readRDS(&quot;data/T0New.Rds&quot;)
 fait.dat &lt;- read.csv(&quot;data/fait.txt&quot;, stringsAsFactors = FALSE) # besoin d'ajouter cela sinon il me garde tous les niveaux des facteurs
+implantation.dat &lt;- read.csv(&quot;data/implantation.txt&quot;)
 # une exraction des relations
 relation.dat &lt;- fait.dat[fait.dat$caracNew == &quot;Relations&quot; ,]</code></pre>
 <p>Les données sont regroupées en deux tableaux :</p>
@@ -299,7 +300,7 @@ relation.dat &lt;- fait.dat[fait.dat$caracNew == &quot;Relations&quot; ,]</code>
 # Encoding(fait.dat$usual_name) &lt;- &quot;latin1&quot;
 # Encoding(fait.dat$caracteristique) &lt;- &quot;latin1&quot;
 # Encoding(fait.dat$linked_implantation_name) &lt;- &quot;latin1&quot;</code></pre>
-<p>Il faut specifier les encoding de 3 colonnes qui sont en “Latin1” alors que le reste semble être en UTF8. au final knitr semble avoir un problème avec du “multi encoding”, j’ai donc fait un export/import le tout en UTF8.</p>
+<p>Il faut specifier les encoding de 3 colonnes qui sont en “Latin1” alors que le reste semble être en UTF8. Au final knitr semble avoir un problème avec du “multi encoding”, j’ai donc fait un export/import le tout en UTF8.</p>
 <p>Le tableau <a href="#tab:presenceNa">1.1</a> reprend les nombre de données manquantes par variables. L’absence la plus importante est sur les dates (210 et 206 manquantes), puis sur la localisation (72 NA) avec lat/long et granularité et sur les diocése (11 NA).</p>
 <pre class="r"><code># un apply, passer en df qui compte le nombre de NA par colonne 
 relation_na.dat &lt;- as.data.frame(apply(relation.dat, 2, function(x)length(x[is.na(x)])))
@@ -315,8 +316,8 @@ cat(&quot;&lt;tableau&gt;&quot;,paste0(&quot;&lt;caption&gt;&quot;, &quot;(#tab:
 </caption>
 <p></tableau></p>
 <pre class="r"><code>DT::datatable(relation_na.dat) </code></pre>
-<div id="htmlwidget-4f1eb169952224f3df18" style="width:100%;height:auto;" class="datatables html-widget"></div>
-<script type="application/json" data-for="htmlwidget-4f1eb169952224f3df18">{"x":{"filter":"none","data":[["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21"],[0,0,0,0,0,0,0,0,0,0,210,210,206,206,72,72,72,11,210,206,210],["X","idfactoid","idimplantation","usual_name","caracteristique","caracNew","modAgreg","modalite","fklinked_implantation","linked_implantation_name","date_start_min","date_start_max","date_stop_min","date_stop_max","lat","lng","location_granularity","Diocese","date_startC","date_stopC","DureeFact"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>Nbr_NA<\/th>\n      <th>variables<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-right","targets":1},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-391c67e640dd4b29ca19" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-391c67e640dd4b29ca19">{"x":{"filter":"none","data":[["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21"],[0,0,0,0,0,0,0,0,0,0,210,210,206,206,72,72,72,11,210,206,210],["X","idfactoid","idimplantation","usual_name","caracteristique","caracNew","modAgreg","modalite","fklinked_implantation","linked_implantation_name","date_start_min","date_start_max","date_stop_min","date_stop_max","lat","lng","location_granularity","Diocese","date_startC","date_stopC","DureeFact"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>Nbr_NA<\/th>\n      <th>variables<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-right","targets":1},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
 <pre class="r"><code>#knitr::kable(apply(relation.dat, 2, function(x)length(x[is.na(x)]))) # la version à l'arrache knitr</code></pre>
 </div>
 </div>
@@ -404,8 +405,8 @@ cat(&quot;&lt;tableau&gt;&quot;,paste0(&quot;&lt;caption&gt;&quot;, &quot;(#tab:
 </tbody>
 </table>
 </div>
-<div id="modalités-de-relations-dans-le-temps" class="section level3">
-<h3><span class="header-section-number">1.2.2</span> Modalités de relations dans le temps</h3>
+<div id="modalités-et-relations-dans-le-temps" class="section level3">
+<h3><span class="header-section-number">1.2.2</span> Modalités et relations dans le temps</h3>
 <div id="exploration-des-données-manquantes-dans-les-dates" class="section level4">
 <h4><span class="header-section-number">1.2.2.1</span> Exploration des données manquantes dans les dates</h4>
 <p>Il y a 210 et 206 valeurs manquantes au niveau des dates (cf. tableau <a href="#tab:presenceNa">1.1</a>). Ces valeurs manquantes sont consistantes dans les 6 champs de de description des dates : une absence de donnée en <code>date_start_XX</code> se retrouve en <code>date_stop_XX</code> et donc dans la fourchette produite.</p>

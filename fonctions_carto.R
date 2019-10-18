@@ -3,7 +3,8 @@
 # 18-10-2019
 
 # 1 - lecture des diocèses géometries =====
-#
+# attention utilisateur de windows les chemins d'accés sont differents
+
 diocese <- function(cheminDioc = "data/Diocese/", 
                     FicDioFond ="Contour_diocèse_France_1317L93.shp"){
 # il prend comme argument le chemin du fichier et son nom

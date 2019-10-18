@@ -1,5 +1,6 @@
 # script d'exploration des données pour le projet col&mon
 # 16-10-2019
+# Attention les liens relatifs sont pour un os linux !!!!
 ##.###################################################################################33
 ## I. Chargement des données de col&mon ====
 ##.#################################################################################33
@@ -27,18 +28,22 @@ class(fait.dat)
 summary(fait.dat)
 unique(fait.dat$caracNew)
 
-# on essaie d'avoir un bon encoding
-
+## on essaie d'avoir un bon encoding
+# pour fait.dat
 Encoding(fait.dat$usual_name) <- "latin1"
 Encoding(fait.dat$caracteristique) <- "latin1"
 Encoding(fait.dat$linked_implantation_name) <- "latin1"
+# pour implantation
+Encoding(implantation.dat$usual_name) <- "latin1"
+Encoding(implantation.dat$Vocable) <- "latin1"
 
 
 ## 3 - export/imporrt en csv  ================
 # j'ai du rajouter cette etape car knitr a du mal à gerer le multi encoding
 # write.csv(fait.dat, "data/fait.txt")
+write.csv(implantation.dat, "data/implantation.txt")
 fait.dat <- read.csv("data/fait.txt")
-
+implantation.dat <- read.csv("data/implantation.txt")
 
 # une exraction des relations
 relation.dat <- fait.dat[fait.dat$caracNew == "Relations" ,]
@@ -79,13 +84,18 @@ table(NA_date$modAgreg)
 #on regarde les lieux descendant present comme descendant par rapport au id des lieux d'ascendant
 NA_date$fklinked_implantation[NA_date$modAgreg == "D"] %in% NA_date$idimplantation[NA_date$modAgreg == "A"]
 
-NA_date[NA_date$modAgreg == "D",][76,]
-NA_date[NA_date$idimplantation == 2483,]
-
+# c'est la 76 lignes de NA_date pour modagreg == D
 rbind(NA_date[NA_date$modAgreg == "D",][76,],
 relation.dat[relation.dat$idimplantation ==2483,])
 
-table(NA_date$usual_name)
+# ou sont localise les NA
+
+source("fonctions_carto.R") # on charge des fonctions de carto
+
+diocese.shp <- diocese()
+plot(st_geometry(diocese.shp))
+
+
 
 ##.###################################################################################33
 ## III. Graphs ====
