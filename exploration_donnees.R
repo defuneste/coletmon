@@ -32,7 +32,6 @@ unique(fait.dat$caracNew)
 Encoding(fait.dat$usual_name) <- "latin1"
 Encoding(fait.dat$caracteristique) <- "latin1"
 Encoding(fait.dat$linked_implantation_name) <- "latin1"
-           
 
 # une exraction des relations
 relation.dat <- fait.dat[fait.dat$caracNew == "Relations" ,]
@@ -60,7 +59,9 @@ relation.dat[relation.dat$idimplantation == 26,]
 # ou on a des NA
 sapply(relation.dat, anyNA)
 # on va les compter
-apply(relation.dat, 2, function(x)length(x[is.na(x)]))
+relation_na.dat <- as.data.frame(apply(relation.dat, 2, function(x)length(x[is.na(x)])))
+names(relation_na.dat) <- "Nbr_NA"
+relation_na.dat$variables <- rownames(relation_na.dat)
 
 
 ##.###################################################################################33

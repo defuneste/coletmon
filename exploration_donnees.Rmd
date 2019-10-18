@@ -50,8 +50,19 @@ Encoding(fait.dat$linked_implantation_name) <- "latin1"
 
 Il faut specifier les encoding de 3 colonnes qui sont en "Latin1" alors que le reste semble être en UTF8
 
-```{r presence Na}
-knitr::kable(apply(relation.dat, 2, function(x)length(x[is.na(x)])))
+
+Le tableau \@ref(tab:presenceNa) reprend les nombre de données manquantes par variables. L'absence la plus importante est sur les dates (210 et 206 manquantes), puis sur la localisation  (72 NA) avec lat/long et granularité et sur les diocése (11 NA). 
+
+```{r, presenceNa, results="asis" }
+relation_na.dat <- as.data.frame(apply(relation.dat, 2, function(x)length(x[is.na(x)])))
+names(relation_na.dat) <- "Nbr_NA"
+relation_na.dat$variables <- rownames(relation_na.dat)
+rownames(relation_na.dat) <- NULL
+
+cat("<tableau>",paste0("<caption>", "(#tab:presenceNa)", ' Nombre de données manquantes par variabes', "</caption>"),"</tableau>", sep ="\n")
+
+DT::datatable(relation_na.dat)
+#knitr::kable(apply(relation.dat, 2, function(x)length(x[is.na(x)])))
 ```
 
 
@@ -79,18 +90,18 @@ knitr::kable(t(table(relation.dat$modAgreg, relation.dat$modalite)),
 
 # Premiers graphes sur les relations
 
-## en prenant le tout 
+## En prenant le tout 
 
-```{r premier_graph}
+```{r premier_graph, message=FALSE}
 library(igraph)
 relation <- relation.dat[relation.dat$modAgreg != "A",] # on enleve les doublons
-dim(relation) # verif
-names(relation) 
-# one ne garde que les noms
+# on ne garde que les noms
 relation <- subset(relation, select =  c("usual_name", "linked_implantation_name"))
 # objet de graphs
 graph_ensemble <- graph.edgelist(as.matrix(relation), directed = FALSE)
 ```
+
+Attention `igraph` masque et utilise des fonctions de `dplyr` et `base` comme `as_data_frame`, `groups`, `union`.
 
 On obtient un graphe peut lisible avec `r gsize(graph_ensemble)` liens et `r gorder(graph_ensemble)` noeuds.
 
