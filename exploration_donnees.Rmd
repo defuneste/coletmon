@@ -115,6 +115,30 @@ rbind(NA_date[NA_date$modAgreg == "D",][76,],
 relation.dat[relation.dat$idimplantation == 2483,]) # attention c'est une indexation par rapport à un emplacement 
 ```
 
+On peut produire une carte rapide des valeurs manquantes pour les dates (promis j'en fait une belle semi-interactive sous mapview plus tard, je suis allez au plus vite ce vendredi après midi). On en a un gros cluster autour de la region lyonaise et un autre autour de Charleville-Mézières. Est ce que cela suit une logique par rapport au données ? 
+
+
+```{r, include= F}
+source("fonctions_carto.R") # on charge des fonctions de carto
+library(sf)
+# on passe implantation en sf
+implantation.shp <- st_as_sf(implantation.dat[!is.na(implantation.dat$lat),], coords = c("lng", "lat"), crs = 4326)
+# de wgs 84 au lambert 93
+implantation.shp <- st_transform(implantation.shp, 2154) 
+NA_date.shp <- st_sf(left_join(NA_date, implantation.shp, by = "idimplantation"))
+diocese.shp <- diocese() # on charge les dioceses
+```
+
+
+```{r, carte_Na_date, message = FALSE}
+plot(st_geometry(diocese.shp))
+plot(st_geometry(implantation.shp), add =  T, col = "lightgrey", pch = 16, cex = .5)
+plot(st_geometry(NA_date.shp), add = T, col = "red", pch = 16, cex = .5)
+legend("topleft", legend=c("Avec dates", "Sans date"), pch = 16,
+       col=c("lightgrey", "red"))
+```
+
+
 
 # Premiers graphes sur les relations
 

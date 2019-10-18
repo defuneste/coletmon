@@ -1,6 +1,9 @@
 # script d'exploration des données pour le projet col&mon
 # 16-10-2019
 # Attention les liens relatifs sont pour un os linux !!!!
+# norme de codage :
+# .dat est un df ou tible
+# .shp est un sf
 ##.###################################################################################33
 ## I. Chargement des données de col&mon ====
 ##.#################################################################################33
@@ -13,6 +16,7 @@ library(dplyr) # manip données
 library(lubridate) # les dates 
 library(forcats) # pour les facteurs
 library(igraph) # package classic pour les graphs
+library(tmap) # un peu de carto statique d'explo
 
 
 ## 2 - Les données ================
@@ -77,6 +81,7 @@ relation_na.dat$variables <- rownames(relation_na.dat)
 
 #exploration des données manquantes dans les dates
 NA_date <- relation.dat[is.na(relation.dat$date_start_min),]
+NA_date[!is.na(NA_date$date_stop_max),]
 
 # ventilation des NA dans modAgreg
 table(NA_date$modAgreg)
@@ -92,9 +97,20 @@ relation.dat[relation.dat$idimplantation ==2483,])
 
 source("fonctions_carto.R") # on charge des fonctions de carto
 
-diocese.shp <- diocese()
-plot(st_geometry(diocese.shp))
+# on passe implantation en sf
+implantation.shp <- st_as_sf(implantation.dat[!is.na(implantation.dat$lat),], coords = c("lng", "lat"), crs = 4326)
+# de wgs 84 au lambert 93
+implantation.shp <- st_transform(implantation.shp, 2154) 
+NA_date.shp <- st_sf(left_join(NA_date, implantation.shp, by = "idimplantation"))
 
+
+diocese.shp <- diocese() # on charge les dioceses
+
+plot(st_geometry(diocese.shp))
+plot(st_geometry(implantation.shp), add =  T, col = "lightgrey", pch = 16, cex = .5)
+plot(st_geometry(NA_date.shp), add = T, col = "red", pch = 16, cex = .5)
+legend("topleft", legend=c("Avec dates", "Sans dates"), pch = 16,
+       col=c("lightgrey", "red"))
 
 
 ##.###################################################################################33
