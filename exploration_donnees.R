@@ -135,9 +135,14 @@ legend("topleft", legend=c("Avec dates", "Sans dates"), pch = 16,
 # The first is the graph object and the second is the subset of edges to be removed
 # dans notre cas on a une direction : DN network 
 # donc les degree sont outdegree et in degree
-# lien entre deux : g["X", "Y"]
+# lien entre deux : g["X", "Y"] vu que cela est une sorte de matrice
 # incident() est une fonction qui va regarder toutes les liens d'un noeud
 # head_of() va chercher les noeuds d'orgine d'un graph sur une selection 
+# neighbors(g ,"F", mode = c("all")) retourne tout voisins de F dans le grapg g 
+# paths est le chemin pour connecter des points, ont peu le mesurer
+# le chemin le plus long est nommer le diamètre du réseau
+# ego(g, 2, "F", mode=c("out")) retourne tous les vertex qui sont à n liens du noeud en fonction de in/out/all 
+# betweenness. This is an index of how frequently the vertex lies on shortest paths between any two vertices in the network.s
 
 #on va viltrer pour n'avoir que deux colonnes de relation
 
@@ -149,8 +154,25 @@ relation <- subset(relation, select =  c("usual_name", "linked_implantation_name
 # objet de graphs
 graph_ensemble <- graph.edgelist(as.matrix(relation), directed = FALSE)
 
-# oh que c'est laid
-plot(graph_ensemble, layout = layout_nicely(graph_ensemble))
+# oh que c'est de moins en moins laid
+plot(graph_ensemble, 
+     vertex.size = 0,
+     vertex.label.cex = 0.2,
+     layout = layout_nicely(graph_ensemble))
+
+graph_ensemble.b <- betweenness(graph_ensemble, directed = TRUE)
+
+plot(graph_ensemble, 
+     vertex.label = NA,
+     edge.color = 'black',
+     vertex.size = sqrt(graph_ensemble.b)+1,
+     edge.arrow.size = 0.05,
+     layout = layout_nicely(graph_ensemble))
+
+# retourne le chemin le plus long dans le graph
+farthest_vertices(graph_ensemble)
+# et ici retourne le chemin pris
+get_diameter(graph_ensemble)
 
 # Subset vertices and edges
 V(graph_ensemble)
