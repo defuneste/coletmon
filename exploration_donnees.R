@@ -118,6 +118,26 @@ legend("topleft", legend=c("Avec dates", "Sans dates"), pch = 16,
 ##.#################################################################################33
 
 ## 1 - Vertex/hedge ================
+# size, label, color, and shape sont les ajustements les plus freuents sur un reseau
+# qqs regles
+# éviter les croissement de liens
+# éviter les superposition de noeud
+# faire les liens le plus uniforme
+# augmenter la symétrie du réseau le plus possible
+# mettre les noeuds les plus influents au centre
+# dans igraph il y a plusieurs layout, definit par un argument du meme nom 
+# ex : circle, tree, etc
+# ex : plot(g1, vertex.label.color = "black", layout = layout_in_circle(g1))
+# on peut aussi sauver le layout dans un objet : 
+# m <- layout_as_tree(g1)
+# plot(g1, vertex.label.color = "black", layout = m)
+# delete_edges() which takes two arguments.
+# The first is the graph object and the second is the subset of edges to be removed
+# dans notre cas on a une direction : DN network 
+# donc les degree sont outdegree et in degree
+# lien entre deux : g["X", "Y"]
+# incident() est une fonction qui va regarder toutes les liens d'un noeud
+# head_of() va chercher les noeuds d'orgine d'un graph sur une selection 
 
 #on va viltrer pour n'avoir que deux colonnes de relation
 
@@ -130,7 +150,7 @@ relation <- subset(relation, select =  c("usual_name", "linked_implantation_name
 graph_ensemble <- graph.edgelist(as.matrix(relation), directed = FALSE)
 
 # oh que c'est laid
-plot(graph_ensemble)
+plot(graph_ensemble, layout = layout_nicely(graph_ensemble))
 
 # Subset vertices and edges
 V(graph_ensemble)
