@@ -17,6 +17,8 @@ library(lubridate) # les dates
 library(forcats) # pour les facteurs
 library(igraph) # package classic pour les graphs
 library(tmap) # un peu de carto statique d'explo
+library(ggplot2) # des graphiques
+library(plotly) # des graphiques interactifs
 
 
 ## 2 - Les données ================
@@ -70,9 +72,9 @@ t(table(relation.dat$modAgreg, relation.dat$modalite))
 relation.dat[relation.dat$idimplantation == 26,]
 
 
-## 2 date, duree ================
+## 2 Valeurs manquantes  ================
 
-# ou on a des NA
+# Où a-t-on des NA
 sapply(relation.dat, anyNA)
 # on va les compter
 relation_na.dat <- as.data.frame(apply(relation.dat, 2, function(x)length(x[is.na(x)])))
@@ -103,13 +105,23 @@ implantation.shp <- st_as_sf(implantation.dat[!is.na(implantation.dat$lat),], co
 implantation.shp <- st_transform(implantation.shp, 2154) 
 NA_date.shp <- st_sf(left_join(NA_date, implantation.shp, by = "idimplantation"))
 
-
+# une carte rapide
 diocese.shp <- diocese() # on charge les dioceses
 
-plot(st_geometry(diocese.shp))
-plot(st_geometry(implantation.shp), add =  T, col = "lightgrey", pch = 16, cex = .5)
-plot(st_geometry(NA_date.shp), add = T, col = "red", pch = 16, cex = .5)
-legend("topleft", legend=c("Avec dates", "Sans dates"), pch = 16,
-       col=c("lightgrey", "red"))
+plot(st_geometry(diocese.shp)) # on plot les dioceses
+plot(st_geometry(implantation.shp), add =  T, col = "lightgrey", pch = 16, cex = .5) # on ajoute les implantations
+plot(st_geometry(NA_date.shp), add = T, col = "red", pch = 16, cex = .5) # celle qui n'ont pas de durée
+legend("topleft", legend=c("Avec dates", "Sans dates"), pch = 16, 
+       col=c("lightgrey", "red")) # une legende
 
 
+## 3 date et durées  ================
+
+# j'enleve ascendant car cela doublonne
+relation_sans_A.dat <- relation.dat[relation.dat$modAgreg != "A",] 
+dim(relation_sans_A.dat)
+
+plot_ly(relation_sans_A.dat, x = relation_sans_A.dat$date_start_min, y = relation_sans_A.dat$date_start_max, 
+        text = paste(relation_sans_A.dat$usual_name, relation_sans_A.dat$modalite, relation_sans_A.dat$linked_implantation, sep = "\n"))
+
+plot(relation_sans_A.dat$date_start_min, relation_sans_A.dat$date_start_max)

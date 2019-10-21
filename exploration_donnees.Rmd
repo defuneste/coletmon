@@ -15,6 +15,8 @@ output:
 
 ```{r setup, include = FALSE}
 library(dplyr) # manip données
+library(ggplot2) #  graphiques
+library(plotly) # graphiques un peu interactif
 ```
 
 
@@ -138,6 +140,35 @@ legend("topleft", legend=c("Avec dates", "Sans date"), pch = 16,
        col=c("lightgrey", "red"))
 ```
 
+#### Dates et durées
+
+Il n'y a que trois cas d'ecarts importants entre `date_start_min` et `date_start_man` representé par la figure (\@ref(fig:verif-datemin-et-max)). Les données ignorées sont les NA.
+
+(ref:verif-datemin-et-max) Ecarts entre date_start_min et date_start_max
+
+```{r, verif-datemin-et-max, message = FALSE, fig.cap="(ref:verif-datemin-et-max)"}
+# c'est du js
+f <- list(
+  family = "Courier New, monospace",
+  size = 18,
+  color = "#7f7f7f"
+)
+x <- list(
+  title = "date_start_min",
+  titlefont = f
+)
+y <- list(
+  title = "date_start_max",
+  titlefont = f
+)
+# j'enleve les doublons A/D
+relation_sans_A.dat <- relation.dat[relation.dat$modAgreg != "A",]
+# il ignore les NA
+plot_ly(relation_sans_A.dat, x = relation_sans_A.dat$date_start_min, y = relation_sans_A.dat$date_start_max, type="scatter", # on def X et y
+        # on fait un text
+        text = paste(relation_sans_A.dat$usual_name, relation_sans_A.dat$modalite, relation_sans_A.dat$linked_implantation, sep = "\n")) %>% 
+layout(xaxis = x, yaxis = y)
+```
 
 
 # Premiers graphes sur les relations
