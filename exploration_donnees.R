@@ -13,6 +13,7 @@
 library(sp) # ancien package spatial toujours présent
 library(sf) # package spatial
 library(dplyr) # manip données
+library(tidyr) # manip données /tidyverse
 library(lubridate) # les dates 
 library(forcats) # pour les facteurs
 library(igraph) # package classic pour les graphs
@@ -121,7 +122,27 @@ legend("topleft", legend=c("Avec dates", "Sans dates"), pch = 16,
 relation_sans_A.dat <- relation.dat[relation.dat$modAgreg != "A",] 
 dim(relation_sans_A.dat)
 
-plot_ly(relation_sans_A.dat, x = relation_sans_A.dat$date_start_min, y = relation_sans_A.dat$date_start_max, 
-        text = paste(relation_sans_A.dat$usual_name, relation_sans_A.dat$modalite, relation_sans_A.dat$linked_implantation, sep = "\n"))
+#start_min et Max
+plot_ly(relation_sans_A.dat, x = relation_sans_A.dat$date_start_min, y = relation_sans_A.dat$date_start_max, type="scatter", # on def X et y
+        # on fait un text
+        text = paste(relation_sans_A.dat$usual_name, relation_sans_A.dat$modalite, relation_sans_A.dat$linked_implantation, sep = "\n")) 
 
-plot(relation_sans_A.dat$date_start_min, relation_sans_A.dat$date_start_max)
+# il y a pas de différence entre les deux dans les relations
+sum((relation_sans_A.dat$date_stop_max - relation_sans_A.dat$date_stop_min), na.rm = T)
+
+# on va utiliser ggplot2 donc il faut que cela soit en tidy, au moins un peu
+relation_sans_NA_tidy.dat <- gather(relation_sans_A.dat, "date_startC", "date_stopC", key = "debut_fin", value = "date")
+
+
+# date de début et de fin des relation par modAgreg
+ggplot(relation_sans_NA_tidy.dat, aes(date, color = debut_fin)) +
+    geom_freqpoly(binwidth = 50) + 
+    facet_wrap(~modAgreg) +
+    labs( x = "date (50 ans)" , y = "décompte" ) +
+    theme_bw()
+    
+ggplot(relation_sans_NA_tidy.dat, aes(date, color = modAgreg)) +
+    geom_freqpoly(binwidth = 50) + 
+    #facet_wrap(~modAgreg) +
+    labs( x = "date (50 ans)" , y = "décompte" ) +
+    theme_bw()
