@@ -131,18 +131,36 @@ plot_ly(relation_sans_A.dat, x = relation_sans_A.dat$date_start_min, y = relatio
 sum((relation_sans_A.dat$date_stop_max - relation_sans_A.dat$date_stop_min), na.rm = T)
 
 # on va utiliser ggplot2 donc il faut que cela soit en tidy, au moins un peu
-relation_sans_NA_tidy.dat <- gather(relation_sans_A.dat, "date_startC", "date_stopC", key = "debut_fin", value = "date")
+relation_sans_A_tidy.dat <- gather(relation_sans_A.dat, "date_startC", "date_stopC", key = "debut_fin", value = "date")
 
 
 # date de début et de fin des relation par modAgreg
-ggplot(relation_sans_NA_tidy.dat, aes(date, color = debut_fin)) +
+ggplot(relation_sans_A_tidy.dat, aes(date, color = debut_fin)) +
     geom_freqpoly(binwidth = 50) + 
     facet_wrap(~modAgreg) +
     labs( x = "date (50 ans)" , y = "décompte" ) +
     theme_bw()
+# ici par modAgreg  
+
+# ggplot(relation_sans_A_tidy.dat, aes(date, color = modAgreg)) +
+#     geom_freqpoly(binwidth = 50) + 
+#     #facet_wrap(~modAgreg) +
+#     labs( x = "date (50 ans)" , y = "décompte" ) +
+#     theme_bw()
+
+# un test avec plotly
+# c'est pas fou il faut comprendre comment ajuster les bins
+plot_ly(alpha = 0.6) %>%
+    add_histogram(x = relation_sans_A.dat$date_start_min[relation_sans_A.dat$modAgreg == "D"]) %>% 
+    add_histogram(x = relation_sans_A.dat$date_start_min[relation_sans_A.dat$modAgreg == "H"]) %>%
+    add_histogram(x = relation_sans_A.dat$date_start_min[relation_sans_A.dat$modAgreg == "X"]) %>% 
+    layout(barmode = "overlay")
     
-ggplot(relation_sans_NA_tidy.dat, aes(date, color = modAgreg)) +
-    geom_freqpoly(binwidth = 50) + 
-    #facet_wrap(~modAgreg) +
-    labs( x = "date (50 ans)" , y = "décompte" ) +
-    theme_bw()
+hist(relation_sans_A.dat$DureeFact)
+
+plot_ly(alpha = 0.6) %>%
+    add_histogram(x = relation_sans_A.dat$DureeFact[relation_sans_A.dat$modAgreg == "D"]) %>% 
+    add_histogram(x = relation_sans_A.dat$DureeFact[relation_sans_A.dat$modAgreg == "H"]) %>% 
+    add_histogram(x = relation_sans_A.dat$DureeFact[relation_sans_A.dat$modAgreg == "X"]) %>% 
+    layout(barmode = "overlay")
+
