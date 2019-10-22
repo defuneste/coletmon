@@ -181,10 +181,8 @@ table(relation_sans_A.dat$modalite, relation_sans_A.dat$durée01) # puis un tabl
 plot_ly(alpha = 0.6) %>%
     add_histogram(x = relation_sans_A.dat$DureeFact[relation_sans_A.dat$DureeFact != 0])
 
-# répartition des durée par date 
-min(relation_sans_A.dat$date_startC)
-max(relation_sans_A.dat$date_startC)
-# on fait un facteur avec des intervales de temps
-pas_de_temps <- seq(from = 400, to = 1800 , by = 50)
+#il me semble que c'est mieux en retirant les 0
+relation_duree.dat <- relation_sans_A.dat[relation_sans_A.dat$DureeFact != 0,]
 
-cut(relation_sans_A.dat$date_startC, pas_de_temps)
+plot_ly(relation_duree.dat, y = ~DureeFact, color = ~modalite, type = "box",
+        text = paste(relation_duree.dat$usual_name, relation_duree.dat$modalite, relation_duree.dat$linked_implantation, sep = "\n"))

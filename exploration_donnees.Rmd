@@ -77,7 +77,7 @@ DT::datatable(relation_na.dat)
 
 ### Modalité des relations
 
-On obtient `r nrow(relation.dat)` factoides avec une `relation`. Le tableau \@ref(tab:modalite) répartit `modalite` en fonction des `modAgreg`. `H` de `modAgreg` ne correspond qu'aux associations de prière (`r nrow(relation.dat[relation.dat$modalite == "Association de prière",])`)) et `X` ne correspond qu'aux déplacements d'institution (`r nrow(relation.dat[relation.dat$modalite == "Déplacement d'institution",])`). `A` et `D` correspondent aux relations ascendantes et descendantes comprises entre trois couples : 
+On obtient `r nrow(relation.dat)` factoides avec une `relation`. Le tableau \@ref(tab:modalite) répartit `modalite` en fonction des `modAgreg`. `H` de `modAgreg` ne correspond qu'aux associations de prière (`r nrow(relation.dat[relation.dat$modalite == "Association de prière",])`) et `X` ne correspond qu'aux déplacements d'institution (`r nrow(relation.dat[relation.dat$modalite == "Déplacement d'institution",])`). `A` et `D` correspondent aux relations ascendantes et descendantes comprises entre trois couples : 
 
 * `À la collation de / Droit de patronage`, 
 * `Appartient / à Possède` et 
@@ -133,7 +133,7 @@ diocese.shp <- diocese() # on charge les dioceses
 ```
 
 
-```{r, carte_Na_date, message = FALSE}
+```{r, carte_Na_date, message = FALSE, fig.align='center'}
 plot(st_geometry(diocese.shp))
 plot(st_geometry(implantation.shp), add =  T, col = "lightgrey", pch = 16, cex = .5)
 plot(st_geometry(NA_date.shp), add = T, col = "red", pch = 16, cex = .5)
@@ -143,13 +143,13 @@ legend("topleft", legend=c("Avec dates", "Sans date"), pch = 16,
 
 #### Dates et durées pour les relations
 
-Je n'ai gardé pas gardé les relations ascendantes pour les analyses suivantes car elles sont identiques. 
+Je n'ai pas gardé les relations ascendantes pour les analyses suivantes car elles sont identiques. 
 
 Les durées sont produites à partir des fourchettes de dates de début et de fin (`date_start_min/max` et `date_stop_min/max`). Il n'y a que trois cas d'ecarts importants entre `date_start_min` et `date_start_max` representé par la figure \@ref(fig:verif-datemin-et-max). Les données manquantes ne sont pas prises en compte. `date_stop_min` et `date_stop_max` sont identiques pour les relations.
 
 (ref:verif-datemin-et-max) Ecarts entre date_start_min et date_start_max
 
-```{r, verif-datemin-et-max, message = FALSE, fig.cap="(ref:verif-datemin-et-max)"}
+```{r, verif-datemin-et-max, message = FALSE, fig.cap="(ref:verif-datemin-et-max)", fig.align='center'}
 # c'est du js
 f <- list(
   family = "Courier New, monospace",
@@ -178,15 +178,31 @@ La figure \@ref(fig:date-modalite) regroupe les répartitions des dates (par tra
 
 (ref:date-modalite) Répartition des dates (début/fin) par tranches de 50 ans en fonction des modes d'agrégation 
 
-```{r, date-modalite, fig.cap="(ref:date-modalite)"}
+```{r, date-modalite, fig.cap="(ref:date-modalite)", fig.align='center'}
 # on va utiliser ggplot2 donc il faut que cela soit en tidy, au moins un peu
 relation_sans_NA_tidy.dat <- gather(relation_sans_A.dat, "date_startC", "date_stopC", key = "debut_fin", value = "date")
 # date de début et de fin des relation par modAgreg
-ggplot(relation_sans_NA_tidy.dat, aes(date, color = debut_fin)) +
+date_modalite <- ggplot(relation_sans_NA_tidy.dat, aes(date, color = debut_fin)) +
     geom_freqpoly(binwidth = 50) + 
     facet_wrap(~modAgreg) +
-    labs( x = "date (50 ans)" , y = "décompte" ) +
+    labs(x = "", y = "") +
     theme_bw()
+# c'est du js
+f <- list(
+  family = "Courier New, monospace",
+  size = 18,
+  color = "#7f7f7f"
+)
+x <- list(
+  title = "date (50 ans)",
+  titlefont = f
+)
+y <- list(
+  title = "décompte",
+  titlefont = f
+)
+ggplotly(date_modalite) %>% 
+    layout(xaxis = x, yaxis = y)
     
 ```
 
@@ -205,6 +221,28 @@ relation_sans_A.dat$durée01 <- 0
 relation_sans_A.dat$durée01[relation_sans_A.dat$DureeFact != 0] <- 1
 
 knitr::kable(table(relation_sans_A.dat$modalite, relation_sans_A.dat$durée01), caption = "(ref:modalite-duree)") # puis un tableau
+```
+
+La figure \@ref(fig:durre-modalite) 
+
+(ref:durre-modalite) Boites à moustaches des durées en fonction des modalités de relation
+
+```{r, durre-modalite, fig.align='center', fig.cap="(ref:durre-modalite)"}
+f <- list(
+  family = "Courier New, monospace",
+  size = 18,
+  color = "#7f7f7f"
+)
+
+y <- list(
+  title = "Durée (annnées)",
+  titlefont = f
+)
+relation_duree.dat <- relation_sans_A.dat[relation_sans_A.dat$DureeFact != 0,]
+
+plot_ly(relation_duree.dat, y = ~DureeFact, color = ~modalite, type = "box",
+        text = paste(relation_duree.dat$usual_name, relation_duree.dat$modalite, relation_duree.dat$linked_implantation, sep = "\n"))%>% 
+layout(yaxis = y)
 ```
 
 
