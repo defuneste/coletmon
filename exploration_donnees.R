@@ -115,6 +115,13 @@ plot(st_geometry(NA_date.shp), add = T, col = "red", pch = 16, cex = .5) # celle
 legend("topleft", legend=c("Avec dates", "Sans dates"), pch = 16, 
        col=c("lightgrey", "red")) # une legende
 
+p <- ggplotly(
+    ggplot(diocese.shp) +
+        geom_sf(aes("fill = Surface"))
+) 
+p
+
+#une plus belle version de la carte 
 
 ## 3 date et durées  ================
 

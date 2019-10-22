@@ -235,13 +235,13 @@ f <- list(
 )
 
 y <- list(
-  title = "Durée (annnées)",
+  title = "Durée (années)",
   titlefont = f
 )
 relation_duree.dat <- relation_sans_A.dat[relation_sans_A.dat$DureeFact != 0,]
 
 plot_ly(relation_duree.dat, y = ~DureeFact, color = ~modalite, type = "box",
-        text = paste(relation_duree.dat$usual_name, relation_duree.dat$modalite, relation_duree.dat$linked_implantation, sep = "\n"))%>% 
+        text = paste(relation_duree.dat$usual_name, relation_duree.dat$modalite, relation_duree.dat$linked_implantation, sep = "\n")) %>% 
 layout(yaxis = y)
 ```
 

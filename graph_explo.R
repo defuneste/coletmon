@@ -45,6 +45,8 @@
 
 #on va viltrer pour n'avoir que deux colonnes de relation
 
+library(igraph)
+
 relation <- relation.dat[relation.dat$modAgreg != "A",] # on enleve les doublons
 dim(relation) # verif
 names(relation) 
@@ -64,7 +66,7 @@ graph_ensemble.b <- betweenness(graph_ensemble, directed = TRUE)
 plot(graph_ensemble, 
      vertex.label = NA,
      edge.color = 'black',
-     vertex.size = sqrt(graph_ensemble.b)+1,
+     vertex.size = log(graph_ensemble.b)+1,
      edge.arrow.size = 0.05,
      layout = layout_nicely(graph_ensemble))
 
