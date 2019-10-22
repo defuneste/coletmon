@@ -120,6 +120,7 @@ legend("topleft", legend=c("Avec dates", "Sans dates"), pch = 16,
 
 # j'enleve ascendant car cela doublonne
 relation_sans_A.dat <- relation.dat[relation.dat$modAgreg != "A",] 
+relation_sans_A.dat <- relation_sans_A.dat[!is.na(relation_sans_A.dat$date_startC),]
 dim(relation_sans_A.dat)
 
 #start_min et Max
@@ -158,9 +159,32 @@ plot_ly(alpha = 0.6) %>%
     
 hist(relation_sans_A.dat$DureeFact)
 
+#une version plotly
 plot_ly(alpha = 0.6) %>%
-    add_histogram(x = relation_sans_A.dat$DureeFact[relation_sans_A.dat$modAgreg == "D"]) %>% 
-    add_histogram(x = relation_sans_A.dat$DureeFact[relation_sans_A.dat$modAgreg == "H"]) %>% 
-    add_histogram(x = relation_sans_A.dat$DureeFact[relation_sans_A.dat$modAgreg == "X"]) %>% 
-    layout(barmode = "overlay")
+    add_histogram(x = relation_sans_A.dat$DureeFact)
 
+# pas de durée
+nrow(relation_sans_A.dat[relation_sans_A.dat$DureeFact == 0,])
+# une durée
+nrow(relation_sans_A.dat[relation_sans_A.dat$DureeFact != 0,])
+
+names(relation_sans_A.dat)
+
+# je dois dropper les factors non présent dans mon subset
+relation_sans_A.dat$modalite <- factor(relation_sans_A.dat$modalite)
+relation_sans_A.dat$durée01 <- 0
+relation_sans_A.dat$durée01[relation_sans_A.dat$DureeFact != 0] <- 1
+
+table(relation_sans_A.dat$modalite, relation_sans_A.dat$durée01) # puis un tableau
+
+# un hist
+plot_ly(alpha = 0.6) %>%
+    add_histogram(x = relation_sans_A.dat$DureeFact[relation_sans_A.dat$DureeFact != 0])
+
+# répartition des durée par date 
+min(relation_sans_A.dat$date_startC)
+max(relation_sans_A.dat$date_startC)
+# on fait un facteur avec des intervales de temps
+pas_de_temps <- seq(from = 400, to = 1800 , by = 50)
+
+cut(relation_sans_A.dat$date_startC, pas_de_temps)

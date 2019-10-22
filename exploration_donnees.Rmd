@@ -145,7 +145,7 @@ legend("topleft", legend=c("Avec dates", "Sans date"), pch = 16,
 
 Je n'ai gardé pas gardé les relations ascendantes pour les analyses suivantes car elles sont identiques. 
 
-Il n'y a que trois cas d'ecarts importants entre `date_start_min` et `date_start_man` representé par la figure \@ref(fig:verif-datemin-et-max). Les données manquantes ne sont pas prises en compte. `date_stop_min` et `date_stop_max` sont identiques pour les relations.
+Les durées sont produites à partir des fourchettes de dates de début et de fin (`date_start_min/max` et `date_stop_min/max`). Il n'y a que trois cas d'ecarts importants entre `date_start_min` et `date_start_max` representé par la figure \@ref(fig:verif-datemin-et-max). Les données manquantes ne sont pas prises en compte. `date_stop_min` et `date_stop_max` sont identiques pour les relations.
 
 (ref:verif-datemin-et-max) Ecarts entre date_start_min et date_start_max
 
@@ -190,6 +190,22 @@ ggplot(relation_sans_NA_tidy.dat, aes(date, color = debut_fin)) +
     
 ```
 
+En plus des 210 valeurs manquantes il y `r nrow(relation_sans_A.dat[relation_sans_A.dat$DureeFact == 0,])` durées nulles (`DureeFact == 0`). Est-il possible que ces durées soit inférieures à notre grain temporelle (une année) ?
+
+Il y a `r nrow(relation_sans_A.dat[relation_sans_A.dat$DureeFact != 0,])` durées de plus d'un an. 
+
+le tableau \@ref(tab:modalite-duree) représente la répartition des durées nulles par modalités.La filiation descendante, le déplacement d'institution et le droit de patronnage restent dans des proportions similaires entre les deux categories (0/1) par contre l'association de prière et la possésion semble proportionnelement plus souvent représentés par des durées (notre olivier : je n'ai pas fait de chi2 ni de comparaison multiple est-ce utile/nécessaire ?).   
+
+(ref:modalite-duree) Répartition des durées nulles (0) ou supérieures à 1 (1) par modalités
+
+```{r, modalite-duree}
+relation_sans_A.dat$modalite <- factor(relation_sans_A.dat$modalite) # on recode pour dropper les niveau du facteur absent
+# une variable pour séparer ceux qui ont une durée des autres
+relation_sans_A.dat$durée01 <- 0
+relation_sans_A.dat$durée01[relation_sans_A.dat$DureeFact != 0] <- 1
+
+knitr::kable(table(relation_sans_A.dat$modalite, relation_sans_A.dat$durée01), caption = "(ref:modalite-duree)") # puis un tableau
+```
 
 
 # Premiers graphes sur les relations
