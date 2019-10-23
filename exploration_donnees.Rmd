@@ -118,7 +118,7 @@ rbind(NA_date[NA_date$modAgreg == "D",][76,],
 relation.dat[relation.dat$idimplantation == 2483,]) # attention c'est une indexation par rapport à un emplacement 
 ```
 
-On peut produire une carte rapide des valeurs manquantes pour les dates (promis j'en fait une belle semi-interactive sous mapview plus tard, je suis allez au plus vite ce vendredi après midi). On en a un gros cluster autour de la region lyonaise et un autre autour de Charleville-Mézières. Est ce que cela suit une logique par rapport au données ? 
+On peut produire une carte rapide des valeurs manquantes pour les dates. On en a un gros cluster autour de la region lyonaise et un autre autour de Charleville-Mézières. Est ce que cela suit une logique par rapport au données ? 
 
 
 ```{r, include= F}
@@ -141,13 +141,15 @@ legend("topleft", legend=c("Avec dates", "Sans date"), pch = 16,
        col=c("lightgrey", "red"))
 ```
 
-```{r}
+Et voici une interactive sous `mapview` : (il y a deux relations qui ne trouve pas d'implantations est ce possible ?)
+
+```{r, message = FALSE, fig.align='center'}
 initmapview()
 mapview::mapview(diocese.shp, color = "gray75",  lwd = 1, # couleur et type du contour
                      col.regions = "red",  alpha = 0.5,                  # couleur du fond et type
                      layer.name = "Diocèses" ) +
 mapview::mapview(implantation.shp, cex = 0.1, layer.name = "Implantations") +
-mapview::mapview(NA_date.shp, zcol = "modAgreg", layer.name = "Relation sans dates")
+mapview::mapview(NA_date.shp, zcol = "modAgreg", layer.name = "Relations sans dates")
 ```
 
 
