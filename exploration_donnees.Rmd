@@ -1,5 +1,5 @@
 ---
-title: "Exploration Relation Col&Mon"
+title: "Statistiques descriptives des données relations col&mon"
 author: "Olivier"
 date: "17 octobre 2019"
 output: 
@@ -21,11 +21,11 @@ library(plotly) # graphiques un peu interactif
 ```
 
 
-# Statistiques descriptives des données
 
-## Chargement des données et prise en main
 
-### Chargement 
+# Chargement des données et prise en main
+
+## Chargement 
 
 ```{r chargement}
 #implantation.dat <- readRDS("data/T0impl.Rds")
@@ -43,7 +43,7 @@ Les données sont regroupées en deux tableaux :
 
 C'est du second que l'on tire les relations.
 
-### Prise en main
+## Prise en main
 
 ```{r bon encoding}
 # l'encoding semble en UTF8 et latin1 en fonction des colonnes/sources de la données
@@ -73,9 +73,9 @@ DT::datatable(relation_na.dat)
 ```
 
 
-## Description des relations
+# Description des relations
 
-### Modalité des relations
+## Modalité des relations
 
 On obtient `r nrow(relation.dat)` factoides avec une `relation`. Le tableau \@ref(tab:modalite) répartit `modalite` en fonction des `modAgreg`. `H` de `modAgreg` ne correspond qu'aux associations de prière (`r nrow(relation.dat[relation.dat$modalite == "Association de prière",])`) et `X` ne correspond qu'aux déplacements d'institution (`r nrow(relation.dat[relation.dat$modalite == "Déplacement d'institution",])`). `A` et `D` correspondent aux relations ascendantes et descendantes comprises entre trois couples : 
 
@@ -90,9 +90,9 @@ knitr::kable(t(table(relation.dat$modAgreg, relation.dat$modalite)),
              caption = "(ref:modalite-caption)")
 ```
 
-### Modalités et relations dans le temps
+## Modalités et relations dans le temps
 
-#### Exploration des données manquantes dans les dates 
+### Exploration des données manquantes dans les dates 
 
 Il y a 210 et 206 valeurs manquantes au niveau des dates (cf. tableau \@ref(tab:presenceNa)). Ces valeurs manquantes sont consistantes dans les 6 champs de de description des dates : une absence de donnée en `date_start_XX` se retrouve en `date_stop_XX` et donc dans la fourchette produite.
 
@@ -153,7 +153,7 @@ mapview::mapview(NA_date.shp, zcol = "modAgreg", layer.name = "Relations sans da
 ```
 
 
-#### Dates et durées pour les relations
+### Dates et durées pour les relations
 
 Je n'ai pas gardé les relations ascendantes pour les analyses suivantes car elles sont identiques. 
 
@@ -256,22 +256,4 @@ plot_ly(relation_duree.dat, y = ~DureeFact, color = ~modalite, type = "box",
         text = paste(relation_duree.dat$usual_name, relation_duree.dat$modalite, relation_duree.dat$linked_implantation, sep = "\n")) %>% 
 layout(yaxis = y)
 ```
-
-
-# Premiers graphes sur les relations
-
-## En prenant le tout 
-
-```{r premier_graph, message=FALSE}
-library(igraph)
-relation <- relation.dat[relation.dat$modAgreg != "A",] # on enleve les doublons
-# on ne garde que les noms
-relation <- subset(relation, select =  c("usual_name", "linked_implantation_name"))
-# objet de graphs
-graph_ensemble <- graph.edgelist(as.matrix(relation), directed = FALSE)
-```
-
-Attention `igraph` masque et utilise des fonctions de `dplyr` et `base` comme `as_data_frame`, `groups`, `union`.
-
-On obtient un graphe peut lisible avec `r gsize(graph_ensemble)` liens et `r gorder(graph_ensemble)` noeuds.
 
