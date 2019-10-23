@@ -12,24 +12,9 @@ output:
         code_folding: hide
 ---
 
+Je vais reprendre pas mal de codes et des notes à partir du livre **Statistical Analysis of Network Data with R** de Kolaczyk et Csárdi.
+
+Un reseau peu être "dirigé" ou "sans direction" (*directed* et *undirected*). Notre cas mélange les deux puisque l'on a des relations ascendantes/descendantes et des relations horizonatles. 
 
 
-
-
-<!-- # Premiers graphes sur les relations -->
-
-<!-- ## En prenant le tout  -->
-
-<!-- ```{r premier_graph, message=FALSE} -->
-<!-- library(igraph) -->
-<!-- relation <- relation.dat[relation.dat$modAgreg != "A",] # on enleve les doublons -->
-<!-- # on ne garde que les noms -->
-<!-- relation <- subset(relation, select =  c("usual_name", "linked_implantation_name")) -->
-<!-- # objet de graphs -->
-<!-- graph_ensemble <- graph.edgelist(as.matrix(relation), directed = FALSE) -->
-<!-- ``` -->
-
-<!-- Attention `igraph` masque et utilise des fonctions de `dplyr` et `base` comme `as_data_frame`, `groups`, `union`. -->
-
-<!-- On obtient un graphe peut lisible avec `r gsize(graph_ensemble)` liens et `r gorder(graph_ensemble)` noeuds. -->
 

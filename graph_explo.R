@@ -10,6 +10,23 @@
 ## I. Chargement des données de col&mon ====
 ##.#################################################################################33
 
+# Premiers graphes sur les relations
+
+# ## En prenant le tout
+# 
+# ```{r premier_graph, message=FALSE}
+# library(igraph)
+# relation <- relation.dat[relation.dat$modAgreg != "A",] # on enleve les doublons
+# # on ne garde que les noms
+# relation <- subset(relation, select =  c("usual_name", "linked_implantation_name"))
+# # objet de graphs
+# graph_ensemble <- graph.edgelist(as.matrix(relation), directed = FALSE)
+# ```
+# 
+# Attention `igraph` masque et utilise des fonctions de `dplyr` et `base` comme `as_data_frame`, `groups`, `union`.
+# 
+# On obtient un graphe peut lisible avec `r gsize(graph_ensemble)` liens et `r gorder(graph_ensemble)` noeuds.
+# 
 
 
 ##.###################################################################################33
