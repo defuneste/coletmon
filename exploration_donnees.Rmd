@@ -141,6 +141,16 @@ legend("topleft", legend=c("Avec dates", "Sans date"), pch = 16,
        col=c("lightgrey", "red"))
 ```
 
+```{r}
+initmapview()
+mapview::mapview(diocese.shp, color = "gray75",  lwd = 1, # couleur et type du contour
+                     col.regions = "red",  alpha = 0.5,                  # couleur du fond et type
+                     layer.name = "Diocèses" ) +
+mapview::mapview(implantation.shp, cex = 0.1, layer.name = "Implantations") +
+mapview::mapview(NA_date.shp, zcol = "modAgreg", layer.name = "Relation sans dates")
+```
+
+
 #### Dates et durées pour les relations
 
 Je n'ai pas gardé les relations ascendantes pour les analyses suivantes car elles sont identiques. 

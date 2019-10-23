@@ -116,10 +116,14 @@ legend("topleft", legend=c("Avec dates", "Sans dates"), pch = 16,
        col=c("lightgrey", "red")) # une legende
 
 p <- ggplotly(
-    ggplot(diocese.shp) +
-        geom_sf(aes("fill = Surface"))
+    ggplot() +
+        geom_sf(diocese.shp, fill = "white", aes(geometry = geometry))
 ) 
 p
+
+initmapview()
+
+mapview(list(diocese.shp, implantation.shp))
 
 #une plus belle version de la carte 
 
