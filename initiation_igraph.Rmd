@@ -14,7 +14,129 @@ output:
 
 Je vais reprendre pas mal de codes et des notes à partir du livre **Statistical Analysis of Network Data with R** de Kolaczyk et Csárdi.
 
-Un reseau peu être "dirigé" ou "sans direction" (*directed* et *undirected*). Notre cas mélange les deux puisque l'on a des relations ascendantes/descendantes et des relations horizonatles. 
+Un reseau peu être "orienté" ou "non orienté" (*directed* et *undirected*). Notre cas mélange les deux puisque l'on a des relations ascendantes/descendantes et des relations horizontales ou est ce que les relations horizontales sont à considerés à double sens ? 
+
+# Intro
+## Faire des graphs
+
+Un graph est représenté formellement comme ceci : $G =(V,E)$ 
+
+$V$ représente les *vertices* (ou moeuds/*nodes*) et $E$ les *edges* (liens ou *links*). Le nombre total de noeuds est appelé *order* et de liens *size*. Ces codifications et notions sont importantes car `igraph` les reprends pour nommer ses fonctions.  
+
+igraph adopte (principalement) une convention de codage de ces fonctions de ce type `nom.nom` et est prévu pour du R base.
+
+```{r, message=FALSE}
+library(igraph)
+```
+
+Pour fabriquer des petits graphs à vocation de test ou pédagogique la fonction `graph.formula` est suffisante : 
+
+```{r}
+# on fabrique un graph
+g <- graph.formula(1-2, 1-3, 2-3, 2-4, 3-5, 4-5, 4-6,
+                    4-7, 5-6, 6-7)
+V(g) # retourne les noeuds
+E(g) # retourne les liens
+class(g)
+class(V(g))
+class(E(g))
+```
+
+Comme on peut le voir avec `class(V(g))` les fonctions d'igraph retourne une `class` d'objet et des declinaisons specifiques. Ce sont des objets (`OO`) de type S3 dans R qui ont donc leurs propres methodes dans les fonctions géneriques (comme `plot()`). 
+
+```{r}
+print_all(g) # la structure de g
+plot(g) # un graphique
+```
+
+La premiere ligne : `IGRAPH 6a73c86 UN-- 7 10 --` indique un objet igraph UN comme *undirected* de 7 noeuds et 10 liens. Puis le liens sont représentés. 
+
+```{r}
+dg <- graph.formula(1-+2, 1-+3, 2++3)
+plot(dg)
+print_all(dg)
+```
+
+Ici on a produit un graph orienté (DN) avec meme une double orientation : de 2 vers 3 et de 3 vers. Il est possible de remplacer ou d'obtenir les nom des noeuds : 
+
+```{r}
+V(dg)$name # on prends les noms
+V(dg)$name <- c("Sam", "Mary", "Tom") # on les remplace
+dg
+```
+
+`get.edgelist`  retourne le graph dans une matrice de deux colonnes assez lisible et `get.adjacency` retourne une matrice de contingence via les noeuds (ce format est pratique pour les calculs). 
+
+```{r}
+get.edgelist(g) #  
+get.adjacency(g)
+```
 
 
+## Faire des opérations sur les graphs
+
+Bien que l'on puisse travailler avec le graph chargé on peut être interessé par des sous parties, rajouté des liens/noeuds etc.. On peut utiliser la fonction `induced.subgraph` :
+
+```{r}
+h <- induced.subgraph(g, 1:5)
+print_all(h)
+```
+
+On ne garde que les noeuds de 1 à 5 et les liens correspondant. Les opérateurs usuelles fonctionnent aussi. 
+
+```{r}
+h <- g - vertices(c(6,7))  # ici on retire les noeuds 6 et 7 
+h <- h + vertices(c(6,7)) # là on les remets mais il manque les liens
+g <- h + edges(c(4,6), c(4,7), c(5,6), c(6,7)) # que l' on rajoute
+```
+
+## Décorer des graphs
+
+On parle de *decorating*, cela correspond à rajouter des attributs (sur les noeuds, liens ou l'ensemble). 
+
+L'operateur `$` est pas mal utilisé et déjà un peu vu. 
+
+```{r}
+V(g)$color <- "red"
+g
+```
+
+L'attribut le plus fréquent pour les liens est le poid (*weighted*) : 
+
+```{r}
+E(g)$weight <- runif(ecount(g))
+```
+
+On peut aussi nommer le graph :
+```{r}
+g$name <- "exemple"
+print_all(g)
+```
+
+### Exemple sur un cas un peu plus complexe
+
+le cas part de deux df mis dans un graph
+
+```{r}
+library(sand)
+str(elist.lazega)
+str(v.attr.lazega)
+```
+
+
+```{r}
+g.lazega <- graph.data.frame(elist.lazega, directed =  FALSE, vertices = v.attr.lazega)
+g.lazega$name <- "exmple lazega"
+```
+
+```{r}
+vcount(g.lazega) # 36 avocats
+ecount(g.lazega) # 115 liens
+```
+
+`list.vertex.attributes` retourne la liste des attributs des vertices
+
+```{r}
+list.vertex.attributes(g.lazega)
+```
 
