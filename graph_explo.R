@@ -72,11 +72,29 @@ relation <- subset(relation, select =  c("usual_name", "linked_implantation_name
 # objet de graphs
 graph_ensemble <- graph.edgelist(as.matrix(relation), directed = FALSE)
 
+is_simple(graph_ensemble) # on a plusieurs liens pour un meme couple de noeud
+
+#which_multiple retoune les liens doubles, un vecteur F/T
+relation[which_multiple(graph_ensemble),]
+
+# which_loop retourne les boucles : liens de noeuds à noeuds
+relation[which_loop(graph_ensemble),] # on a aussi une loop 
+
+length(unique(relation$usual_name[which_multiple(graph_ensemble)]))
+
+relation.dat[relation.dat$usual_name == "Dalon",c("idfactoid", "idimplantation", "usual_name", "linked_implantation_name", "date_startC")]
+
+E(graph_ensemble)$weight <- 1
+graph_ensemble_simplify <- simplify(graph_ensemble, edge.attr.comb = "sum")
+
+sum(E(graph_ensemble)$weight > 1)
+
 # oh que c'est de moins en moins laid
-plot(graph_ensemble, 
+ plot(graph_ensemble_simplify, 
      vertex.size = 0,
      vertex.label.cex = 0.2,
      layout = layout_nicely(graph_ensemble))
+
 
 graph_ensemble.b <- betweenness(graph_ensemble, directed = TRUE)
 

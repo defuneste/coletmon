@@ -140,3 +140,5 @@ ecount(g.lazega) # 115 liens
 list.vertex.attributes(g.lazega)
 ```
 
+On fait la difference entre un graph qui ne peut avoir plus d'un lien entre deux noeuds (*simple graph*) et un graph où c'est le cas *multi-edged*. 
+
