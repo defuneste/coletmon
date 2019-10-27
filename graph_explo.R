@@ -59,6 +59,10 @@
 # le chemin le plus long est nommer le diamètre du réseau
 # ego(g, 2, "F", mode=c("out")) retourne tous les vertex qui sont à n liens du noeud en fonction de in/out/all 
 # betweenness. This is an index of how frequently the vertex lies on shortest paths between any two vertices in the network.s
+# assortativity est interessante sur les ordres
+# fastgreedy.communauty pour la detection de communauté 
+# regarder threejs
+
 
 #on va viltrer pour n'avoir que deux colonnes de relation
 
@@ -87,7 +91,7 @@ relation.dat[relation.dat$usual_name == "Dalon",c("idfactoid", "idimplantation",
 E(graph_ensemble)$weight <- 1
 graph_ensemble_simplify <- simplify(graph_ensemble, edge.attr.comb = "sum")
 
-sum(E(graph_ensemble)$weight > 1)
+sum(E(graph_ensemble_simplify )$weight > 1)
 
 # oh que c'est de moins en moins laid
  plot(graph_ensemble_simplify, 
