@@ -83,4 +83,12 @@ mapImplVite <- function(ImpSel.shp, Vcolor)
         
     if (Vcolor=="") {mapview::mapview(ImpSel.shp)}
         else { mapview::mapview(ImpSel.shp, zcol = Vcolor)}
- }
+}
+
+# 1 - leaflet =====
+
+library(leaflet)
+
+carte <- leaflet() %>% 
+    addTiles()
+
