@@ -1,0 +1,59 @@
+---
+title: "exploration graph"
+author: "olivier"
+date: "28 octobre 2019"
+output: 
+    bookdown::html_document2:
+        theme: readable
+        toc: true
+        toc_float: true
+        number_sections: true
+        fig_caption: yes
+        code_folding: hide
+---
+
+
+# Chargement des données et mise en forme
+
+```{r setup, include=FALSE}
+library(tidyr)
+library(dplyr) # manip données
+library(ggplot2) #  graphiques
+library(plotly) # graphiques un peu interactif
+library(igraph) # graph
+library(threejs) # APi de js pour les graphs
+``` 
+
+
+## Chargement
+
+```{r}
+fait.dat <- read.csv("data/fait.txt")
+implantation.dat <- read.csv("data/implantation.txt")
+# on retire le num de ligne qui était passe en X
+fait.dat <- subset(fait.dat, select = - X)
+implantation.dat <- subset(implantation.dat, select = - X)
+
+```
+
+## Mise en forme
+
+```{r}
+relation.dat <- fait.dat[fait.dat$caracNew == "Relations" ,] # on ne garde que les relations
+relation <- relation.dat[relation.dat$modAgreg != "A",] # on enleve les doublons
+relation <- subset(relation, select =  c("usual_name", "linked_implantation_name")) # on ne garde que les noms et noms liées
+# on drop les facteurs non pris en compte suite aux subset de relations
+relation$usual_name <- factor(relation$usual_name)
+relation$linked_implantation_name <- factor(relation$linked_implantation_name)
+```
+
+
+Dans un premier temps je ne vais travailler qu'avec les relations représentées par des couples noms d'implantations et noms d'implantations liées. Il s'agira par la suite de complexifier. 
+
+Cela recouvre `r nrow(relation)` relations car celles avec `modAgreg == A` ont été retirées (elles doublonnaient avec `modAgreg == D`). Il y a `r length(unique(relation$usual_name))` implantations distinctes (`usual_name`) qui sont liées à `r length(unique(relation$linked_implantation_name))` implantations liées distinctes (`linked_implantation_name`). 
+
+
+
+
+
+

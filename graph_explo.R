@@ -10,30 +10,37 @@
 ## I. Chargement des données de col&mon ====
 ##.#################################################################################33
 
-# Premiers graphes sur les relations
 
-# ## En prenant le tout
-# 
-# ```{r premier_graph, message=FALSE}
-# library(igraph)
-# relation <- relation.dat[relation.dat$modAgreg != "A",] # on enleve les doublons
-# # on ne garde que les noms
-# relation <- subset(relation, select =  c("usual_name", "linked_implantation_name"))
-# # objet de graphs
-# graph_ensemble <- graph.edgelist(as.matrix(relation), directed = FALSE)
-# ```
-# 
-# Attention `igraph` masque et utilise des fonctions de `dplyr` et `base` comme `as_data_frame`, `groups`, `union`.
-# 
-# On obtient un graphe peut lisible avec `r gsize(graph_ensemble)` liens et `r gorder(graph_ensemble)` noeuds.
-# 
+# 1 - chargement des librairies =======
 
+library(tidyr)
+library(dplyr) # manip données
+library(ggplot2) #  graphiques
+library(plotly) # graphiques un peu interactif
+library(igraph) # graph
+library(threejs) # APi de js pour les graphs
+
+# 2 - Imports des données =======
+
+fait.dat <- read.csv("data/fait.txt")
+implantation.dat <- read.csv("data/implantation.txt")
+fait.dat <- subset(fait.dat, select = - X)
+implantation.dat <- subset(implantation.dat, select = - X)
+
+# 3 - Mise en forme =======
+
+relation.dat <- fait.dat[fait.dat$caracNew == "Relations" ,] # on ne garde que les relations
+relation <- relation.dat[relation.dat$modAgreg != "A",] # on enleve les doublons
+relation <- subset(relation, select =  c("usual_name", "linked_implantation_name")) # on ne garde que les noms et noms liées
+# on drop les facteurs non pris en compte suite aux subset de relations
+relation$usual_name <- factor(relation$usual_name)
+relation$linked_implantation_name <- factor(relation$linked_implantation_name)
 
 ##.###################################################################################33
-## III. Graphs ====
+## II. Graphs ====
 ##.#################################################################################33
 
-## 1 - Vertex/hedge ================
+## 0 - Vertex/hedge ================
 # size, label, color, and shape sont les ajustements les plus freuents sur un reseau
 # qqs regles
 # éviter les croissement de liens
@@ -63,16 +70,13 @@
 # fastgreedy.communauty pour la detection de communauté 
 # regarder threejs
 
+### 1 - stats/graphs ================
 
-#on va viltrer pour n'avoir que deux colonnes de relation
+# combien a t on d'implantations avec au moins une relations
+length(unique(relation$usual_name))
 
-library(igraph)
+length(unique(relation$linked_implantation_name))
 
-relation <- relation.dat[relation.dat$modAgreg != "A",] # on enleve les doublons
-dim(relation) # verif
-names(relation) 
-# one ne garde que les noms
-relation <- subset(relation, select =  c("usual_name", "linked_implantation_name"))
 # objet de graphs
 graph_ensemble <- graph.edgelist(as.matrix(relation), directed = FALSE)
 
@@ -91,7 +95,7 @@ relation.dat[relation.dat$usual_name == "Dalon",c("idfactoid", "idimplantation",
 E(graph_ensemble)$weight <- 1
 graph_ensemble_simplify <- simplify(graph_ensemble, edge.attr.comb = "sum")
 
-sum(E(graph_ensemble_simplify )$weight > 1)
+sum(E(graph_ensemble_simplify)$weight > 1)
 
 # oh que c'est de moins en moins laid
  plot(graph_ensemble_simplify, 

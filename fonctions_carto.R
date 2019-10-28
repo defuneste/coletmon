@@ -78,7 +78,7 @@ mapImplVite <- function(ImpSel.shp, Vcolor)
     initmapview()
     #  affichage de 
     mapview::mapview(diocese.shp, color = "gray75",  lwd = 1, # couleur et type du contour
-                     col.regions = "red",  alpha = 0.5,                  # couleur du fond et type
+                     col.regions = "red",  alpha = 0.5,       # couleur du fond et type
                      layer.name = "Diocèses" ) +
         
     if (Vcolor=="") {mapview::mapview(ImpSel.shp)}
