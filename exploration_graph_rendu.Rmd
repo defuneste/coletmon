@@ -22,6 +22,7 @@ library(ggplot2) #  graphiques
 library(plotly) # graphiques un peu interactif
 library(igraph) # graph
 library(threejs) # APi de js pour les graphs
+library(sf)
 ``` 
 
 
@@ -41,7 +42,7 @@ implantation.dat <- subset(implantation.dat, select = - X)
 ```{r}
 relation.dat <- fait.dat[fait.dat$caracNew == "Relations" ,] # on ne garde que les relations
 relation <- relation.dat[relation.dat$modAgreg != "A",] # on enleve les doublons
-relation <- subset(relation, select =  c("usual_name", "linked_implantation_name")) # on ne garde que les noms et noms liées
+relation <- subset(relation, select =  c("idimplantation", "usual_name", "fklinked_implantation","linked_implantation_name")) # on ne garde que les noms et noms liées
 # on drop les facteurs non pris en compte suite aux subset de relations
 relation$usual_name <- factor(relation$usual_name)
 relation$linked_implantation_name <- factor(relation$linked_implantation_name)
@@ -50,10 +51,78 @@ relation$linked_implantation_name <- factor(relation$linked_implantation_name)
 
 Dans un premier temps je ne vais travailler qu'avec les relations représentées par des couples noms d'implantations et noms d'implantations liées. Il s'agira par la suite de complexifier. 
 
-Cela recouvre `r nrow(relation)` relations car celles avec `modAgreg == A` ont été retirées (elles doublonnaient avec `modAgreg == D`). Il y a `r length(unique(relation$usual_name))` implantations distinctes (`usual_name`) qui sont liées à `r length(unique(relation$linked_implantation_name))` implantations liées distinctes (`linked_implantation_name`). 
+# Description des relations
+
+## Quelques chiffres à garder en tête
+
+### Les relations directes
+
+Cela recouvre `r nrow(relation)` relations directes car celles avec `modAgreg == A` ont été retirées (elles doublonnaient avec `modAgreg == D`). Il y a `r length(unique(relation$idimplantation))` implantations distinctes (`idimplantation`) qui sont liées à `r length(unique(relation$fklinked_implantation))` implantations liées distinctes (`fklinked_implantation`). 
+
+Le tableau \@ref(tab:relationusualname) et le diagramme en baton \@ref(fig:relationidimplantation-bar) représentent le nombre de relations que l'on a pour chaque noms d'implantations distincts (`idimplantation`). Il y a deux implantations (Charroux, Saint-Sauveur et Cluny) qui possèdent 124 et 83 relations puis on obtient un second groupe d'implantations avec un nombre de relations contenues entre 38 et 20. Ensuite les nombre d'implantations possedant de moins en moins de relations va augmenter, presque exponentiellement pour culminer au groupe d'implantations ne possedant qu'une relation (155).
 
 
+```{r, relationusualname, results="asis" }
+# un tableau avec les Id et les noms
+idimplant_court <- subset(implantation.dat, select = c(idimplantation, usual_name))
+
+implantation_relation <- relation %>% 
+    group_by(idimplantation) %>% # on groupe par usual name
+    summarize(nb = n()) %>%  # on compte par ce group
+    arrange(desc(nb)) %>% # on passe en decroissant
+    left_join(idimplant_court,by = "idimplantation") # ion rajoute le nom
+# une bidouille pour avoir un titre de tableau avec ref
+cat("<tableau>",paste0("<caption>", "(#tab:relationusualname)", ' Nombre de relations directes par idimplantation', "</caption>"),"</tableau>", sep ="\n")
+DT::datatable(implantation_relation)
 
 
+```
+
+(ref:relationidimplantation-bar) Diagramme en baton du nombre de relations directes par idimplantation 
+
+```{r, relationidimplantation-bar, fig.cap="(ref:relationidimplantation-bar)", fig.align = 'center'}
+gg_implantation_relation <- ggplot(implantation_relation) +
+        geom_bar(aes(nb)) + 
+        labs(x = "", y = "") +
+        theme_bw()
+# c'est du js
+f <- list(
+  family = "Courier New, monospace",
+  size = 18,
+  color = "#7f7f7f"
+)
+x <- list(
+  title = "Nombre de relations par idimplantation",
+  titlefont = f
+)
+y <- list(
+  title = "décompte",
+  titlefont = f
+)
+ggplotly(gg_implantation_relation) %>% 
+    layout(xaxis = x, yaxis = y)
+```
 
 
+### une carte des implantations par nombre de relations directes
+
+```{r, include=FALSE}
+source("fonctions_carto.R") # on charge des fonctions de carto
+# on passe implantation en sf
+implantation.shp <- st_as_sf(implantation.dat[!is.na(implantation.dat$lat),], coords = c("lng", "lat"), crs = 4326)
+# de wgs 84 au lambert 93
+implantation.shp <- st_transform(implantation.shp, 2154) 
+implantation_relation.shp <- st_sf(left_join(implantation_relation, implantation.shp, by = "idimplantation"))
+diocese.shp <- diocese()
+```
+
+
+```{r, message = FALSE, fig.align = 'center'}
+
+initmapview()
+ mapview::mapview(diocese.shp, color = "gray75",  lwd = 1, # couleur et type du contour
+                      col.regions = "red",  alpha = 0.5,                  # couleur du fond et type
+                      layer.name = "Diocèses" ) +
+ mapview::mapview(implantation.shp, cex = 0.1, layer.name = "Implantations") +
+ mapview::mapview(implantation_relation.shp, cex = "nb", layer.name = "")
+```

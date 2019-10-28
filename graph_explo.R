@@ -31,7 +31,7 @@ implantation.dat <- subset(implantation.dat, select = - X)
 
 relation.dat <- fait.dat[fait.dat$caracNew == "Relations" ,] # on ne garde que les relations
 relation <- relation.dat[relation.dat$modAgreg != "A",] # on enleve les doublons
-relation <- subset(relation, select =  c("usual_name", "linked_implantation_name")) # on ne garde que les noms et noms liées
+relation <- subset(relation, select =  c("idimplantation", "usual_name", "fklinked_implantation","linked_implantation_name")) # on ne garde que les noms et noms liées
 # on drop les facteurs non pris en compte suite aux subset de relations
 relation$usual_name <- factor(relation$usual_name)
 relation$linked_implantation_name <- factor(relation$linked_implantation_name)
@@ -73,9 +73,23 @@ relation$linked_implantation_name <- factor(relation$linked_implantation_name)
 ### 1 - stats/graphs ================
 
 # combien a t on d'implantations avec au moins une relations
-length(unique(relation$usual_name))
+length(unique(relation$idimplantation))
 
-length(unique(relation$linked_implantation_name))
+length(unique(relation$fklinked_implantation))
+
+# une solution plyresque pour/puis vérifier avec igraph
+
+relation %>% 
+    group_by(idimplantation) %>% # on groupe par usual name
+    summarize(nb = n()) %>%  # on compte par ce group
+    arrange(desc(nb)) %>% # on passe en decroissant
+    left_join(subset(implantation.shp, select = c(idimplantation, usual_name)),by = "idimplantation")
+    ggplot() +
+        geom_bar(aes(nb)) + 
+        labs(x = "", y = "") +
+        theme_bw()
+
+subset(implantation.shp, select = c(idimplantation, usual_name))
 
 # objet de graphs
 graph_ensemble <- graph.edgelist(as.matrix(relation), directed = FALSE)
