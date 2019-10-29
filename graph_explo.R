@@ -107,27 +107,34 @@ implantation.dat$name <- paste0("V", implantation.dat$idimplantation)
 
 # on garde pas tout, il est important que le première colonne contienne les noms de vertex cf help(grap.data.frame)
 implantationVertex.dat <- implantation.dat[,c(16,2,3,9:11)] 
+dim(implantationVertex.dat)
 
 names(implantationVertex.dat)
     
 graph_relation <- graph.data.frame(relation_graph, 
                                    directed = FALSE)
 
-set_vertex_attr(graph_relation, name = "label", index = implantationVertex.dat$name, value = implantationVertex.dat$usual_name)
-graph_relation
+
+# le match est un peu tricky ici car utilisé pour réduire et ordonner 
+implantationVertex.dat <- implantationVertex.dat[match(relation_graph$idimplantation, implantationVertex.dat$name),]
+dim(implantationVertex.dat)
+
+for(col_name in colnames(implantationVertex.dat)) {
+  graph_relation = set_vertex_attr(graph_relation, col_name,  1:nrow(implantationVertex.dat), value=implantationVertex.dat[,cn])
+}
 
 is_simple(graph_relation) # on a plusieurs liens pour un meme couple de noeud
 
 #which_multiple retourne les liens doubles, un vecteur F/T
-relation[which_multiple(graph_relation),]
+relation_graph[which_multiple(graph_relation),]
+dim(relation_graph[which_multiple(graph_relation),])
 
 # which_loop retourne les boucles : liens de noeuds à noeuds
-relation[which_loop(graph_relation),] # on a aussi une loop 
+relation_graph[which_loop(graph_relation),] # on a aussi une loop 
 
-relation.dat[relation]
+# on regarde à quoi elle correspond
+relation.dat[relation.dat$idimplantation == 102,]
 
-length(unique(relation$idimplantation[which_multiple(graph_relation)]))
-length(relation$idimplantation[which_multiple(graph_relation)])
 
 E(graph_relation)$weight <- 1
 graph_ensemble_simplify <- simplify(graph_relation, edge.attr.comb = "sum")
@@ -149,9 +156,9 @@ plot(graph_relation,
      layout = layout_nicely(graph_relation))
 
 # retourne le chemin le plus long dans le graph
-farthest_vertices(graph_ensemble)
+farthest_vertices(graph_relation)
 # et ici retourne le chemin pris
-get_diameter(graph_ensemble)
+get_diameter(graph_relation)
 
 # Subset vertices and edges
 V(graph_ensemble)
