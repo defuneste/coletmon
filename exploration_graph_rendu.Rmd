@@ -120,9 +120,14 @@ diocese.shp <- diocese()
 ```{r, message = FALSE, fig.align = 'center'}
 
 initmapview()
- mapview::mapview(diocese.shp, color = "gray75",  lwd = 1, # couleur et type du contour
-                      col.regions = "red",  alpha = 0.5,                  # couleur du fond et type
+ mapview::mapview(diocese.shp, color = "white",  lwd = 1, # couleur et type du contour
+                      col.regions = "grey",  alpha = 0.5,                  # couleur du fond et type
                       layer.name = "Diocèses" ) +
- mapview::mapview(implantation.shp, cex = 0.1, layer.name = "Implantations") +
- mapview::mapview(implantation_relation.shp, cex = "nb", layer.name = "")
+ mapview::mapview(implantation.shp, cex = 0.1, layer.name = "Implantations", col.regions = "black") +
+ mapview::mapview(implantation_relation.shp, cex = "nb", layer.name = "implantations avec relations")
 ```
+
+# Des graphs
+
+## Un graph non orienté pour commencer
+

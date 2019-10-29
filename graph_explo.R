@@ -70,7 +70,7 @@ relation$linked_implantation_name <- factor(relation$linked_implantation_name)
 # fastgreedy.communauty pour la detection de communauté 
 # regarder threejs
 
-### 1 - stats/graphs ================
+### 1 - stats ================
 
 # combien a t on d'implantations avec au moins une relations
 length(unique(relation$idimplantation))
@@ -78,7 +78,6 @@ length(unique(relation$idimplantation))
 length(unique(relation$fklinked_implantation))
 
 # une solution plyresque pour/puis vérifier avec igraph
-
 relation %>% 
     group_by(idimplantation) %>% # on groupe par usual name
     summarize(nb = n()) %>%  # on compte par ce group
@@ -89,33 +88,38 @@ relation %>%
         labs(x = "", y = "") +
         theme_bw()
 
-subset(implantation.shp, select = c(idimplantation, usual_name))
+dim(relation.dat[relation.dat$idimplantation == 1100,])
+
+implantation.dat[implantation.dat$idimplantation == 1293, ] 
+### 2 - Graphs non orienté  ================ 
 
 # objet de graphs
-graph_ensemble <- graph.edgelist(as.matrix(relation), directed = FALSE)
 
-is_simple(graph_ensemble) # on a plusieurs liens pour un meme couple de noeud
+relation <- subset(relation, select = c(idimplantation, fklinked_implantation))
+
+graph_relation <- graph.edgelist(as.matrix(relation), directed = FALSE)
+
+is_simple(graph_relation) # on a plusieurs liens pour un meme couple de noeud
+
 
 #which_multiple retoune les liens doubles, un vecteur F/T
-relation[which_multiple(graph_ensemble),]
+relation[which_multiple(graph_relation),]
 
 # which_loop retourne les boucles : liens de noeuds à noeuds
-relation[which_loop(graph_ensemble),] # on a aussi une loop 
+relation[which_loop(graph_relation),] # on a aussi une loop 
 
-length(unique(relation$usual_name[which_multiple(graph_ensemble)]))
+length(unique(relation$idimplantation[which_multiple(graph_relation)]))
+length(relation$idimplantation[which_multiple(graph_relation)])
 
-relation.dat[relation.dat$usual_name == "Dalon",c("idfactoid", "idimplantation", "usual_name", "linked_implantation_name", "date_startC")]
+E(graph_relation)$weight <- 1
+graph_ensemble_simplify <- simplify(graph_relation, edge.attr.comb = "sum")
 
-E(graph_ensemble)$weight <- 1
-graph_ensemble_simplify <- simplify(graph_ensemble, edge.attr.comb = "sum")
+is_simple(graph_ensemble_simplify) 
 
 sum(E(graph_ensemble_simplify)$weight > 1)
 
 # oh que c'est de moins en moins laid
- plot(graph_ensemble_simplify, 
-     vertex.size = 0,
-     vertex.label.cex = 0.2,
-     layout = layout_nicely(graph_ensemble))
+ plot(graph_relation)
 
 
 graph_ensemble.b <- betweenness(graph_ensemble, directed = TRUE)
