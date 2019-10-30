@@ -131,3 +131,41 @@ initmapview()
 
 ## Un graph non orienté pour commencer
 
+```{r, préparation-des-données}
+ 
+
+# je prefere des caracteres donc autant garder une syntaxe V pour vertex
+relation_graph <- subset(relation, select = c(idimplantation, fklinked_implantation))
+relation_graph$idimplantation <-  paste0("V", relation_graph$idimplantation)
+relation_graph$fklinked_implantation <- paste0("V", relation_graph$fklinked_implantation)
+
+implantation.dat$name <- paste0("V", implantation.dat$idimplantation)
+
+# on garde pas tout, il est important que le première colonne contienne les noms de vertex cf help(grap.data.frame)
+implantationVertex.dat <- implantation.dat[,c(16,2,3,9:11)] 
+graph_relation <- graph.data.frame(relation_graph, 
+                                   directed = FALSE)
+
+
+# le match est un peu tricky ici car utilisé pour réduire et ordonner 
+implantationVertex.dat <- implantationVertex.dat[match(relation_graph$idimplantation, implantationVertex.dat$name),]
+
+# on rajoute en décorations des atttribut au vertex
+for(col_name in colnames(implantationVertex.dat)) {
+  graph_relation = set_vertex_attr(graph_relation, col_name,  1:nrow(implantationVertex.dat), value=implantationVertex.dat[,col_name])
+}
+
+```
+
+
+Le graph que l'on obtient comporte des liens doubles (`r nrow(relation_graph[which_multiple(graph_relation),])`), c'est à dire que l'on peut avoir plusieurs relations entre deux noeuds (implantations). C'est logique vu que le relations et les implantations peuvent évoluer au cours du temps. C'est quelque chose que nous allons devoir observer plus en detail. Dans un premier temps, une solution est de les regrouper pour en faire un "poids", plus ce poids est importants plus ces implantations possèdent des relations (cela suppose de mettre en équivalance les relations sur le principe d'une relation = une relation).  
+
+Plus étrange il y a une "boucle", c'est à dire une relation entre une meme implantation : 
+
+```{r}
+# on regarde à quoi elle correspond
+relation.dat[relation.dat$idimplantation == 102 & relation.dat$fklinked_implantation == 102,]
+```
+
+En tenant donc compte de cette boucle et de ces `r nrow(relation_graph[which_multiple(graph_relation),])` liens multiple on obtient `r length(E(graph_ensemble_simplify)$weight)` liens. 
+

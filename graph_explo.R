@@ -84,12 +84,15 @@ implantation.shp <- st_as_sf(implantation.dat[!is.na(implantation.dat$lat),], co
 # de wgs 84 au lambert 93
 implantation.shp <- st_transform(implantation.shp, 2154) 
 
-relation %>% 
+idimplant_court <- subset(implantation.dat, select = c(idimplantation, usual_name))
+
+implantation_relation <- relation %>% 
     group_by(idimplantation) %>% # on groupe par usual name
     summarize(nb = n()) %>%  # on compte par ce group
     arrange(desc(nb)) %>% # on passe en decroissant
-    left_join(subset(implantation.shp, select = c(idimplantation, usual_name)),by = "idimplantation")
-    ggplot() +
+    left_join(idimplant_court,by = "idimplantation")
+
+ggplot(implantation_relation) +
         geom_bar(aes(nb)) + 
         labs(x = "", y = "") +
         theme_bw()
@@ -120,31 +123,43 @@ implantationVertex.dat <- implantationVertex.dat[match(relation_graph$idimplanta
 dim(implantationVertex.dat)
 
 for(col_name in colnames(implantationVertex.dat)) {
-  graph_relation = set_vertex_attr(graph_relation, col_name,  1:nrow(implantationVertex.dat), value=implantationVertex.dat[,cn])
+  graph_relation = set_vertex_attr(graph_relation, col_name,  1:nrow(implantationVertex.dat), value=implantationVertex.dat[,col_name])
 }
 
 is_simple(graph_relation) # on a plusieurs liens pour un meme couple de noeud
 
 #which_multiple retourne les liens doubles, un vecteur F/T
 relation_graph[which_multiple(graph_relation),]
-dim(relation_graph[which_multiple(graph_relation),])
+# combien en a-t-il ?
+nrow(relation_graph[which_multiple(graph_relation),])
+# quels sont les vertex et leur nombres 
+unique(relation_graph$idimplantation[which_multiple(graph_relation)])
 
 # which_loop retourne les boucles : liens de noeuds à noeuds
 relation_graph[which_loop(graph_relation),] # on a aussi une loop 
 
 # on regarde à quoi elle correspond
-relation.dat[relation.dat$idimplantation == 102,]
+relation.dat[relation.dat$idimplantation == 102 & relation.dat$fklinked_implantation == 102,]
 
-
+# on simplifie le graph # en ajoutant un poids pour le nombre de relation
 E(graph_relation)$weight <- 1
-graph_ensemble_simplify <- simplify(graph_relation, edge.attr.comb = "sum")
+# on fait le nouveau graph avec le poids 
+graph_ensemble_simplify <- simplify(graph_relation, edge.attr.comb = "sum") 
 
+length(E(graph_ensemble_simplify)$weight)
 
+# il y a 189 relations qui ont une valeur supérieur à un 1
 sum(E(graph_ensemble_simplify)$weight > 1)
+
+length(V(graph_ensemble_simplify)$usual_name)
+
+
+hist(graph.strength(graph_ensemble_simplify))
 
 # oh que c'est de moins en moins laid
  plot(graph_relation)
 
+ 
 
 graph_ensemble.b <- betweenness(graph_relation, directed = TRUE)
 
@@ -163,12 +178,6 @@ get_diameter(graph_relation)
 # Subset vertices and edges
 V(graph_ensemble)
 E(graph_ensemble)
-
-# compte le nombre de liens
-gsize(graph_ensemble)
-
-# compte le nombre de noeuds
-gorder(graph_ensemble)
 
 # une indexation sur les noeux avec "cîteaux (2)"
 E(graph_ensemble)[[inc("Cîteaux (2)")]]
