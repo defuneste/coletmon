@@ -37,6 +37,10 @@ relation <- subset(relation, select =  c("idimplantation", "usual_name", "fklink
 relation$usual_name <- factor(relation$usual_name)
 relation$linked_implantation_name <- factor(relation$linked_implantation_name)
 
+# fonction de verif
+verif_relation <- function(num_relation) {
+    relation.dat[relation.dat$idimplantation == num_relation,]}
+
 ##.###################################################################################33
 ## II. Graphs ====
 ##.#################################################################################33
@@ -110,7 +114,7 @@ implantation.dat$name <- paste0("V", implantation.dat$idimplantation)
 
 # on garde pas tout, il est important que le première colonne contienne les noms de vertex cf help(grap.data.frame)
 implantationVertex.dat <- implantation.dat[,c(16,2,3,9:11)] 
-dim(implantationVertex.dat)
+length(unique(implantationVertex.dat$name))
 
 names(implantationVertex.dat)
     
@@ -118,9 +122,13 @@ graph_relation <- graph.data.frame(relation_graph,
                                    directed = FALSE)
 
 
-# le match est un peu tricky ici car utilisé pour réduire et ordonner 
-implantationVertex.dat <- implantationVertex.dat[match(relation_graph$idimplantation, implantationVertex.dat$name),]
-dim(implantationVertex.dat)
+# le match est un peu tricky ici car utilisé pour réduire et ordonner
+# c'est ici la merde
+implantationVertexv2.dat <- implantationVertex.dat[match(relation_graph$idimplantation, implantationVertex.dat$name),]
+head(implantationVertexv2.dat)
+dim(implantationVertexv2.dat)
+
+length(unique(implantationVertexv2.dat$name))
 
 for(col_name in colnames(implantationVertex.dat)) {
   graph_relation = set_vertex_attr(graph_relation, col_name,  1:nrow(implantationVertex.dat), value=implantationVertex.dat[,col_name])
@@ -153,8 +161,30 @@ sum(E(graph_ensemble_simplify)$weight > 1)
 
 length(V(graph_ensemble_simplify)$usual_name)
 
+# un tableau pour montrer les noeuds avec des liens uniques
+lien_unique.dat <- data.frame(V(graph_ensemble_simplify)$name, degree(graph_ensemble_simplify))
+names(lien_unique.dat) <- c("name", "lien_unique")
 
-hist(graph.strength(graph_ensemble_simplify))
+lien_unique_join.dat <- left_join(lien_unique.dat, implantationVertex.dat, by = "name")
+
+sort(degree(graph_ensemble_simplify), decreasing = T)
+
+dim(verif_relation(40))
+verif_relation(40)
+
+degree(graph_ensemble_simplify, v = "V31")
+
+lien_unique.dat[lien_unique.dat$name == "V17",]
+
+sort(unique(lien_unique.dat$name))
+
+relation.dat[relation.dat$fklinked_implantation  == 31,]
+
+relation[relation$idimplantation == 31,]
+relation[relation$fklinked_implantation == 31,]
+
+sort(degree(graph_ensemble_simplify), decreasing = T)
+
 
 # oh que c'est de moins en moins laid
  plot(graph_relation)
