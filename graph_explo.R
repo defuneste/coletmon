@@ -117,24 +117,25 @@ implantationVertex.dat <- implantation.dat[,c(16,2,3,9:11)]
 length(unique(implantationVertex.dat$name))
 
 names(implantationVertex.dat)
-    
-graph_relation <- graph.data.frame(relation_graph, 
-                                   directed = FALSE)
-
 
 # le match est un peu tricky ici car utilisé pour réduire et ordonner
-# c'est ici la merde
-implantationVertexv2.dat <- implantationVertex.dat[match(relation_graph$idimplantation, implantationVertex.dat$name),]
+
+
+
+implantationVertexv2.dat <- implantationVertex.dat[match(unique(c(relation_graph$idimplantation, 
+                                                        relation_graph$fklinked_implantation)), implantationVertex.dat$name),]
 head(implantationVertexv2.dat)
 dim(implantationVertexv2.dat)
 
-length(unique(implantationVertexv2.dat$name))
+graph_relation <- graph.data.frame(relation_graph, 
+                                   directed = FALSE, 
+                                   vertices = implantationVertexv2.dat)
 
-for(col_name in colnames(implantationVertex.dat)) {
-  graph_relation = set_vertex_attr(graph_relation, col_name,  1:nrow(implantationVertex.dat), value=implantationVertex.dat[,col_name])
-}
+
 
 is_simple(graph_relation) # on a plusieurs liens pour un meme couple de noeud
+
+V(graph_relation)$name
 
 #which_multiple retourne les liens doubles, un vecteur F/T
 relation_graph[which_multiple(graph_relation),]
@@ -165,14 +166,14 @@ length(V(graph_ensemble_simplify)$usual_name)
 lien_unique.dat <- data.frame(V(graph_ensemble_simplify)$name, degree(graph_ensemble_simplify))
 names(lien_unique.dat) <- c("name", "lien_unique")
 
-lien_unique_join.dat <- left_join(lien_unique.dat, implantationVertex.dat, by = "name")
+lien_unique_join.dat <- left_join(lien_unique.dat, implantationVertex.dat, by = c("name"="name"))
 
 sort(degree(graph_ensemble_simplify), decreasing = T)
 
-dim(verif_relation(40))
-verif_relation(40)
+dim(verif_relation(1100))
+verif_relation(3)
 
-degree(graph_ensemble_simplify, v = "V31")
+degree(graph_ensemble_simplify, v = "V1100")
 
 lien_unique.dat[lien_unique.dat$name == "V17",]
 
@@ -191,14 +192,14 @@ sort(degree(graph_ensemble_simplify), decreasing = T)
 
  
 
-graph_ensemble.b <- betweenness(graph_relation, directed = TRUE)
+graph_ensemble.b <- betweenness(graph_ensemble_simplify, directed = TRUE)
 
 plot(graph_relation, 
      vertex.label = NA,
      edge.color = 'black',
      vertex.size = log(graph_ensemble.b)+1,
      edge.arrow.size = 0.05,
-     layout = layout_nicely(graph_relation))
+     layout = layout_nicely(graph_ensemble_simplify))
 
 # retourne le chemin le plus long dans le graph
 farthest_vertices(graph_relation)
