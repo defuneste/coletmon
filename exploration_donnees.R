@@ -47,7 +47,7 @@ Encoding(implantation.dat$Vocable) <- "latin1"
 
 ## 3 - export/imporrt en csv  ================
 # j'ai du rajouter cette etape car knitr a du mal à gerer le multi encoding
-# write.csv(fait.dat, "data/fait.txt")
+write.csv(fait.dat, "data/fait.txt")
 write.csv(implantation.dat, "data/implantation.txt")
 fait.dat <- read.csv("data/fait.txt")
 implantation.dat <- read.csv("data/implantation.txt")

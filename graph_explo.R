@@ -168,30 +168,46 @@ names(lien_unique.dat) <- c("name", "lien_unique")
 
 lien_unique_join.dat <- left_join(lien_unique.dat, implantationVertex.dat, by = c("name"="name"))
 
+
+#  3 - premiers graphs ================================
+plot(graph_ensemble_simplify, vertex.label = NA, edge.label = NA,
+     edge.color = "black", vertex.size = 2)
+
+graph_ensemble_simplify <- set_vertex_attr(g, "label",
+                     value=V(g)$name)
+
+
+
+edge_pal <- colorRampPalette(c( "forestgreen", "blue"))
+
+E(graph_ensemble_simplify)$colorW <- edge_pal(10)[as.numeric(cut(
+                                      log(E(graph_ensemble_simplify)$weight + 1 )
+                                      ,breaks = 10))]
+
+hist((E(graph_ensemble_simplify)$weight ))
+
+V(graph_ensemble_simplify)$colorV <- "gray60"
+
+graphjs(graph_ensemble_simplify, 
+        vertex.label = V(graph_ensemble_simplify)$usual_name,
+        vertex.color = V(graph_ensemble_simplify)$colorV,
+        vertex.size = 0.1,
+        edge.color = E(graph_ensemble_simplify)$colorW)
+
+E(graph_ensemble_simplify)$weight
+
+
 sort(degree(graph_ensemble_simplify), decreasing = T)
 
 dim(verif_relation(1100))
 verif_relation(3)
 
-degree(graph_ensemble_simplify, v = "V1100")
-
-lien_unique.dat[lien_unique.dat$name == "V17",]
-
-sort(unique(lien_unique.dat$name))
-
-relation.dat[relation.dat$fklinked_implantation  == 31,]
-
-relation[relation$idimplantation == 31,]
-relation[relation$fklinked_implantation == 31,]
-
 sort(degree(graph_ensemble_simplify), decreasing = T)
-
 
 # oh que c'est de moins en moins laid
  plot(graph_relation)
 
  
-
 graph_ensemble.b <- betweenness(graph_ensemble_simplify, directed = TRUE)
 
 plot(graph_relation, 
@@ -205,10 +221,6 @@ plot(graph_relation,
 farthest_vertices(graph_relation)
 # et ici retourne le chemin pris
 get_diameter(graph_relation)
-
-# Subset vertices and edges
-V(graph_ensemble)
-E(graph_ensemble)
 
 # une indexation sur les noeux avec "cîteaux (2)"
 E(graph_ensemble)[[inc("Cîteaux (2)")]]

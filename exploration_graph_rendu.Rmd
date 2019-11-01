@@ -117,7 +117,7 @@ diocese.shp <- diocese()
 ```
 
 
-<button class="btn btn-primary" data-toggle="collapse" data-target="#BlockName_carterelation"> bouton </button>
+<button class="btn btn-primary" data-toggle="collapse" data-target="#BlockName_carterelation"> Affichage de la carte </button>
 <div id="BlockName_carterelation" class="collapse">
 
 
@@ -132,6 +132,8 @@ initmapview()
 ```
 
 </div>
+
+Comme le message d'erreur l'indique il y a 18 implantations dont on ne posséde par les coordonnées. 
 
 # Des graphs
 
@@ -164,7 +166,7 @@ graph_ensemble_simplify <- simplify(graph_relation, edge.attr.comb = "sum")
 ```
 
 
-Le graph que l'on obtient comporte des liens doubles (`r nrow(relation_graph[which_multiple(graph_relation),])`), c'est à dire que l'on peut avoir plusieurs relations entre deux noeuds (implantations). C'est logique vu que le relations et les implantations peuvent évoluer au cours du temps. C'est quelque chose que nous allons devoir observer plus en detail. Dans un premier temps, une solution est de les regrouper pour en faire un "poids", plus ce poids est importants plus ces implantations possèdent des relations (cela suppose de mettre en équivalance les relations sur le principe d'une relation = une relation).  
+Le graph que l'on obtient comporte des liens doubles (`r nrow(relation_graph[which_multiple(graph_relation),])`), c'est à dire que l'on peut avoir plusieurs relations entre deux noeuds (implantations). C'est logique vu que le relations et les implantations peuvent évoluer au cours du temps. C'est quelque chose que nous allons devoir observer plus en detail. Dans un premier temps, une solution est de les regrouper pour en faire un "poid", plus ce poids est importants plus ces implantations possèdent des relations (cela suppose de mettre en équivalance les relations sur le principe d'une relation = une relation).  
 
 Plus étrange il y a une "boucle", c'est à dire une relation entre une meme implantation : 
 
@@ -176,6 +178,40 @@ relation.dat[relation.dat$idimplantation == 102 & relation.dat$fklinked_implanta
 En tenant donc compte de cette boucle et de ces `r nrow(relation_graph[which_multiple(graph_relation),])` liens multiple on obtient `r length(E(graph_ensemble_simplify)$weight)` liens. 
 
 ```{r}
+#on en fait un tableau
+lien_unique.dat <- data.frame(
+    V(graph_ensemble_simplify)$name, # la première colonne correspond au nom de vertexes
+    degree(graph_ensemble_simplify)) # la seconde au degrée,
+names(lien_unique.dat) <- c("name", "lien_unique") # on renome ces colonnes
+# puis on en fait une jointure sur les implantations
+lien_unique_join.dat <- left_join(lien_unique.dat, implantationVertex.dat, by = c("name"="name"))
+
+DT::datatable(lien_unique_join.dat)
 
 ```
+
+## Une première visualisation. 
+
+On a observe différents types des clusters : des très petits groupes de quelques relations (parfois juste une) et des groupes très étoilées d'un grand nombre d'implantations. 
+
+Plus la couleur du lien est bleu plus ce lien à un poids forts (c'est à dire plus il y a de relations entre ces deux implantations). 
+
+```{r}
+# une palette de couleur
+edge_pal <- colorRampPalette(c( "forestgreen", "blue"))
+
+# on va attribuer une couleur en fonction du log du poids (je suis pas satisfait il me faut faire des verifs)
+E(graph_ensemble_simplify)$colorW <- edge_pal(10)[as.numeric(cut(
+                                      log(E(graph_ensemble_simplify)$weight + 1 ),
+                                       breaks = 10))]
+
+V(graph_ensemble_simplify)$colorV <- "gray60"
+
+graphjs(graph_ensemble_simplify, 
+        vertex.label = V(graph_ensemble_simplify)$usual_name, # ici on mets le nom de l'implantation
+        vertex.color = V(graph_ensemble_simplify)$colorV, # la couleur pour les vertexs
+        vertex.size = 0.1, # on reduit la taille
+        edge.color = E(graph_ensemble_simplify)$colorW) # on reutilise le vecteur de couleurs ici que trois couleurs produites ..
+```
+
 
