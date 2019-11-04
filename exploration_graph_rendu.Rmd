@@ -135,9 +135,9 @@ initmapview()
 
 Comme le message d'erreur l'indique il y a 18 implantations dont on ne posséde par les coordonnées. 
 
-# Des graphs
+# Des graphes
 
-## Un graph non orienté pour commencer
+## Un graphe non orienté pour commencer
 
 ```{r, préparation-des-données}
  
@@ -166,7 +166,14 @@ graph_ensemble_simplify <- simplify(graph_relation, edge.attr.comb = "sum")
 ```
 
 
-Le graph que l'on obtient comporte des liens doubles (`r nrow(relation_graph[which_multiple(graph_relation),])`), c'est à dire que l'on peut avoir plusieurs relations entre deux noeuds (implantations). C'est logique vu que le relations et les implantations peuvent évoluer au cours du temps. C'est quelque chose que nous allons devoir observer plus en detail. Dans un premier temps, une solution est de les regrouper pour en faire un "poid", plus ce poids est importants plus ces implantations possèdent des relations (cela suppose de mettre en équivalance les relations sur le principe d'une relation = une relation).  
+Le premier graphe que l'on obtient comporte des liens doubles (`r nrow(relation_graph[which_multiple(graph_relation),])`) et meme triples (cf. tableau \@ref(tab:poidsrelation)), c'est à dire que l'on peut avoir plusieurs relations entre deux noeuds (implantations). C'est logique vu que le relations et les implantations peuvent évoluer au cours du temps. C'est quelque chose que nous allons devoir observer plus en detail. Dans un premier temps, une solution est de les regrouper pour en faire un "poids", plus ce poids est importants plus ces implantations possèdent des relations (cela suppose de mettre en équivalance les relations sur le principe d'une relation = une relation).  
+
+(ref:poidsrelation) Répartition des poids indiquant le nombre de liens doubles ou triples
+
+```{r, poidsrelation}
+knitr::kable(table(E(graph_ensemble_simplify)$weight), col.names = c("Poids des liens", "Fréquences"), caption = "(ref:poidsrelation)")
+```
+
 
 Plus étrange il y a une "boucle", c'est à dire une relation entre une meme implantation : 
 
@@ -175,9 +182,13 @@ Plus étrange il y a une "boucle", c'est à dire une relation entre une meme imp
 relation.dat[relation.dat$idimplantation == 102 & relation.dat$fklinked_implantation == 102,]
 ```
 
-En tenant donc compte de cette boucle et de ces `r nrow(relation_graph[which_multiple(graph_relation),])` liens multiple on obtient `r length(E(graph_ensemble_simplify)$weight)` liens. 
+En tenant donc compte de cette boucle et de ces `r nrow(relation_graph[which_multiple(graph_relation),])` liens multiple on obtient `r length(E(graph_ensemble_simplify)$weight)` liens :  
 
-```{r}
+
+<button class="btn btn-primary" data-toggle="collapse" data-target="#BlockName_tableauliensunique"> Tableau des liens uniques </button>
+<div id="BlockName_tableauliensunique" class="collapse">
+
+```{r, tableauliensunique}
 #on en fait un tableau
 lien_unique.dat <- data.frame(
     V(graph_ensemble_simplify)$name, # la première colonne correspond au nom de vertexes
@@ -190,20 +201,18 @@ DT::datatable(lien_unique_join.dat)
 
 ```
 
+</div>
+
 ## Une première visualisation. 
 
-On a observe différents types des clusters : des très petits groupes de quelques relations (parfois juste une) et des groupes très étoilées d'un grand nombre d'implantations. 
+Le réseau \@ref(fig:graphsimplify) différencie plusieurs types de clusters : des très petits groupes de quelques relations (parfois juste une) et des groupes très étoilées d'un grand nombre d'implantations. Les liens simple sont en vert, les doubles en orange et les triples en rouge. 
 
-Plus la couleur du lien est bleu plus ce lien à un poids forts (c'est à dire plus il y a de relations entre ces deux implantations). 
+(ref:graphsimplify) Réseau des relations simplifiées entre col&mon
 
-```{r}
-# une palette de couleur
-edge_pal <- colorRampPalette(c( "forestgreen", "blue"))
-
-# on va attribuer une couleur en fonction du log du poids (je suis pas satisfait il me faut faire des verifs)
-E(graph_ensemble_simplify)$colorW <- edge_pal(10)[as.numeric(cut(
-                                      log(E(graph_ensemble_simplify)$weight + 1 ),
-                                       breaks = 10))]
+```{r, graphsimplify, fig.cap="(ref:graphsimplify)"}
+# un vecteur de couleur pour les edges
+E(graph_ensemble_simplify)$colorW <- ifelse(E(graph_ensemble_simplify)$weight == 1, "forestgreen",
+                                            ifelse(E(graph_ensemble_simplify)$weight == 2, "orange", "red"))
 
 V(graph_ensemble_simplify)$colorV <- "gray60"
 

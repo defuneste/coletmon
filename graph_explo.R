@@ -119,9 +119,6 @@ length(unique(implantationVertex.dat$name))
 names(implantationVertex.dat)
 
 # le match est un peu tricky ici car utilisé pour réduire et ordonner
-
-
-
 implantationVertexv2.dat <- implantationVertex.dat[match(unique(c(relation_graph$idimplantation, 
                                                         relation_graph$fklinked_implantation)), implantationVertex.dat$name),]
 head(implantationVertexv2.dat)
@@ -130,8 +127,6 @@ dim(implantationVertexv2.dat)
 graph_relation <- graph.data.frame(relation_graph, 
                                    directed = FALSE, 
                                    vertices = implantationVertexv2.dat)
-
-
 
 is_simple(graph_relation) # on a plusieurs liens pour un meme couple de noeud
 
@@ -173,19 +168,22 @@ lien_unique_join.dat <- left_join(lien_unique.dat, implantationVertex.dat, by = 
 plot(graph_ensemble_simplify, vertex.label = NA, edge.label = NA,
      edge.color = "black", vertex.size = 2)
 
-graph_ensemble_simplify <- set_vertex_attr(g, "label",
-                     value=V(g)$name)
+table(E(graph_ensemble_simplify)$weight)
+
+# un vecteur de couleur pour les edges
+E(graph_ensemble_simplify)$colorW <- ifelse(E(graph_ensemble_simplify)$weight == 1, "forestgreen",
+                                            ifelse(E(graph_ensemble_simplify)$weight == 2, "orange", "red"))
+
+# #palette de couleur
+# edge_pal <- colorRampPalette(c( "forestgreen", "blue"))
+# # un vecteur de couleur pour les edges
+# E(graph_ensemble_simplify)$colorW <- edge_pal(10)[as.numeric(cut( # on cut le log des valeurs de poids et on passe en num pour indexer
+#                                                                   # la palette
+#                                       log(E(graph_ensemble_simplify)$weight + 1 )
+#                                       ,breaks = 10))]
 
 
-
-edge_pal <- colorRampPalette(c( "forestgreen", "blue"))
-
-E(graph_ensemble_simplify)$colorW <- edge_pal(10)[as.numeric(cut(
-                                      log(E(graph_ensemble_simplify)$weight + 1 )
-                                      ,breaks = 10))]
-
-hist((E(graph_ensemble_simplify)$weight ))
-
+# un vecteur de couleur pour les vertexes
 V(graph_ensemble_simplify)$colorV <- "gray60"
 
 graphjs(graph_ensemble_simplify, 
