@@ -166,7 +166,7 @@ graph_ensemble_simplify <- simplify(graph_relation, edge.attr.comb = "sum")
 ```
 
 
-Le premier graphe que l'on obtient comporte des liens doubles (`r nrow(relation_graph[which_multiple(graph_relation),])`) et meme triples (cf. tableau \@ref(tab:poidsrelation)), c'est à dire que l'on peut avoir plusieurs relations entre deux noeuds (implantations). C'est logique vu que le relations et les implantations peuvent évoluer au cours du temps. C'est quelque chose que nous allons devoir observer plus en detail. Dans un premier temps, une solution est de les regrouper pour en faire un "poids", plus ce poids est importants plus ces implantations possèdent des relations (cela suppose de mettre en équivalance les relations sur le principe d'une relation = une relation).  
+Le premier graphe que l'on obtient comporte des liens doubles (`r nrow(relation_graph[which_multiple(graph_relation),])`) et même triples (cf. tableau \@ref(tab:poidsrelation)), c'est à dire que l'on peut avoir plusieurs relations entre deux noeuds (implantations). C'est logique vu que les relations et les implantations peuvent évoluer au cours du temps. C'est quelque chose que nous allons devoir observer plus en detail. Dans un premier temps, une solution est de les regrouper pour en faire un "poids", plus ce poids est importants plus ces implantations possèdent des relations (cela suppose de mettre en équivalance les relations sur le principe d'une relation = une relation).  
 
 (ref:poidsrelation) Répartition des poids indiquant le nombre de liens doubles ou triples
 
@@ -203,6 +203,8 @@ DT::datatable(lien_unique_join.dat)
 
 </div>
 
+Le nombre de liens que posède un noeud correspond au degré. 
+
 ## Une première visualisation. 
 
 Le réseau \@ref(fig:graphsimplify) différencie plusieurs types de clusters : des très petits groupes de quelques relations (parfois juste une) et des groupes très étoilées d'un grand nombre d'implantations. Les liens simple sont en vert, les doubles en orange et les triples en rouge. 
@@ -213,14 +215,19 @@ Le réseau \@ref(fig:graphsimplify) différencie plusieurs types de clusters : d
 # un vecteur de couleur pour les edges
 E(graph_ensemble_simplify)$colorW <- ifelse(E(graph_ensemble_simplify)$weight == 1, "forestgreen",
                                             ifelse(E(graph_ensemble_simplify)$weight == 2, "orange", "red"))
-
 V(graph_ensemble_simplify)$colorV <- "gray60"
+
+# ici u vecteur qui compte les voisins d'orde 1
+un.voisin <- graph.neighborhood(graph_ensemble_simplify, order = 1) # attention la fonction evolue vers ego_size
+
 
 graphjs(graph_ensemble_simplify, 
         vertex.label = V(graph_ensemble_simplify)$usual_name, # ici on mets le nom de l'implantation
         vertex.color = V(graph_ensemble_simplify)$colorV, # la couleur pour les vertexs
-        vertex.size = 0.1, # on reduit la taille
-        edge.color = E(graph_ensemble_simplify)$colorW) # on reutilise le vecteur de couleurs ici que trois couleurs produites ..
+        vertex.size = log(sapply(un.voisin, vcount))/10, # la taille des noeuds = au log(voisin orde 1)/10 
+                                                         # c'est pas fou mais je veux un truc de 0.1 à 0.5
+        edge.color = E(graph_ensemble_simplify)$colorW, # on reutilise le vecteur de couleurs ici que trois couleurs produites ..
+        brush=TRUE) 
 ```
 
 

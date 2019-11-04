@@ -46,8 +46,6 @@ verif_relation <- function(num_relation) {
 ##.#################################################################################33
 
 ## 0 - Vertex/hedge ================
-# size, label, color, and shape sont les ajustements les plus freuents sur un reseau
-# qqs regles
 # éviter les croissement de liens
 # éviter les superposition de noeud
 # faire les liens le plus uniforme
@@ -192,33 +190,68 @@ graphjs(graph_ensemble_simplify,
         vertex.size = 0.1,
         edge.color = E(graph_ensemble_simplify)$colorW)
 
-E(graph_ensemble_simplify)$weight
-
-
-sort(degree(graph_ensemble_simplify), decreasing = T)
-
-dim(verif_relation(1100))
-verif_relation(3)
+#  4 - degrés et degrés des voisins ================================
 
 sort(degree(graph_ensemble_simplify), decreasing = T)
 
-# oh que c'est de moins en moins laid
- plot(graph_relation)
+un.voisin <- graph.neighborhood(graph_ensemble_simplify, order = 1) # attention la fonction evolue vers ego_size
 
- 
-graph_ensemble.b <- betweenness(graph_ensemble_simplify, directed = TRUE)
+graphjs(graph_ensemble_simplify,
+        vertex.label = V(graph_ensemble_simplify)$usual_name,
+        vertex.color = V(graph_ensemble_simplify)$colorV,
+        vertex.size = log(sapply(un.voisin, vcount))/10,
+        edge.color = E(graph_ensemble_simplify)$colorW, brush=TRUE)
 
-plot(graph_relation, 
-     vertex.label = NA,
-     edge.color = 'black',
-     vertex.size = log(graph_ensemble.b)+1,
-     edge.arrow.size = 0.05,
-     layout = layout_nicely(graph_ensemble_simplify))
+plot(degree(graph_ensemble_simplify),knn(graph_ensemble_simplify, V(graph_ensemble_simplify))$knn, log = "xy")
+# c'est pas fou 
+
+#  5 - deux trois stats sur le réseau ================================
 
 # retourne le chemin le plus long dans le graph
-farthest_vertices(graph_relation)
+farthest_vertices(graph_ensemble_simplify)
 # et ici retourne le chemin pris
-get_diameter(graph_relation)
+get_diameter(graph_ensemble_simplify)
 
 # une indexation sur les noeux avec "cîteaux (2)"
 E(graph_ensemble)[[inc("Cîteaux (2)")]]
+
+#  6 - cliques ================================
+
+#Le triangle est le max dans notre graphe
+table(sapply(cliques(graph_ensemble_simplify), length))
+
+# donne les cliques avec un triangles
+cliques(graph_ensemble_simplify)[sapply(cliques(graph_ensemble_simplify), length) == 3]
+
+largest_cliques(graph_ensemble_simplify)
+
+#  7 - communautés ================================
+
+# doit me retourner un bon FALSE mais on ne sait jamais ...
+# fonction utile par contre pour automatiser des trucs
+is.connected(graph_ensemble_simplify)
+
+comps <- decompose.graph(graph_ensemble_simplify)
+
+class(comps)
+
+table(sapply(comps, vcount))
+
+##.###################################################################################33
+## III. Des test de plusieurs graphs ====
+##.#################################################################################33
+
+# c'est un peu leger, il faut regarder plus en détail ce que prenne chaque fonction
+
+graphjs(graph_ensemble_simplify, 
+         vertex.label = V(graph_ensemble_simplify)$usual_name,
+         vertex.color = V(graph_ensemble_simplify)$colorV,
+         vertex.size = 0.1,
+         edge.color = E(graph_ensemble_simplify)$colorW,
+         layout=list(
+            layout_randomly(graph_ensemble_simplify, dim=3),
+            layout_on_sphere(graph_ensemble_simplify),
+            layout_with_drl(graph_ensemble_simplify, dim=3),  # note! somewhat slow...
+            layout_with_fr(graph_ensemble_simplify, dim=3, niter=30)),
+        main=list("random layout", "sphere layout", "drl layout", "fr layout"),
+        fpl=300)
