@@ -20,6 +20,7 @@ library(plotly) # graphiques un peu interactif
 library(sf)
 library(igraph) # graph
 library(threejs) # APi de js pour les graphs
+library(colortools) # couleur
 
 # 2 - Imports des données =======
 
@@ -236,12 +237,57 @@ comps <- decompose.graph(graph_ensemble_simplify)
 class(comps)
 
 table(sapply(comps, vcount))
+table(sapply(comps, ecount))
+
+# un graph sur le gros groupe, attention decompose graph retoune une liste
+graph_principal <- decompose.graph(graph_ensemble_simplify, min.vertices = 599)[[1]]
+
+vertex.connectivity(graph_principal)
+# un seul noeud fait la liason 
+edge.connectivity(graph_principal)
+
+articulation.points(graph_principal)
+# il y a 103 noeuds qui snot des points d'articulations, je suis pas fan de cette stats car est ce que des points en fin de réseau ne
+# rentre pas dans cette case ?
 
 ##.###################################################################################33
-## III. Des test de plusieurs graphs ====
+## III. Des tests de plusieurs graphs ====
 ##.#################################################################################33
 
 # c'est un peu leger, il faut regarder plus en détail ce que prenne chaque fonction
+
+#  1 - sous graph ================================
+
+
+graph_principal <- decompose.graph(graph_ensemble_simplify, min.vertices = 599)[[1]]
+
+graphjs(graph_principal,  vertex.size = 0.1)
+
+
+
+#  2 - communauté sur le sous graph ================================
+## il y a plusieurs moyen de faire du cluster
+
+# fastgreedy.community est un type de regroupement hierarchique
+graph_principal_cluster <- fastgreedy.community(graph_principal)
+
+length(graph_principal_cluster) # il fait 20 groupes
+
+sizes(graph_principal_cluster) # le nombre de vertexes dans chaques groupes
+
+# un vecteur contenant l'appartenance aux groupes par vertexes
+appartenance_group <- membership(graph_principal_cluster)
+
+vingt_col <- wheel("steelblue", num = 20)
+
+graph_principal <- set_vertex_attr(graph_principal, "couleur_group", value = vingt_col[appartenance_group])
+
+graphjs(graph_principal, 
+        vertex.size = 0.1,
+        vertex.color = V(graph_principal)$couleur_group        
+        )
+        
+#  3 - exploration threejs ================================
 
 graphjs(graph_ensemble_simplify, 
          vertex.label = V(graph_ensemble_simplify)$usual_name,
