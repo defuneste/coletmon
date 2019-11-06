@@ -200,7 +200,7 @@ un.voisin <- graph.neighborhood(graph_ensemble_simplify, order = 1) # attention 
 graphjs(graph_ensemble_simplify,
         vertex.label = V(graph_ensemble_simplify)$usual_name,
         vertex.color = V(graph_ensemble_simplify)$colorV,
-        vertex.size = log(sapply(un.voisin, vcount))/10,
+        vertex.size = log(sapply(un.voisin, vcount))/10, # pe degree plus simple ?
         edge.color = E(graph_ensemble_simplify)$colorW, brush=TRUE)
 
 plot(degree(graph_ensemble_simplify),knn(graph_ensemble_simplify, V(graph_ensemble_simplify))$knn, log = "xy")
@@ -212,6 +212,8 @@ plot(degree(graph_ensemble_simplify),knn(graph_ensemble_simplify, V(graph_ensemb
 farthest_vertices(graph_ensemble_simplify)
 # et ici retourne le chemin pris
 get_diameter(graph_ensemble_simplify)
+
+verif_relation(21)
 
 # une indexation sur les noeux avec "cîteaux (2)"
 E(graph_ensemble)[[inc("Cîteaux (2)")]]
@@ -233,6 +235,41 @@ largest_cliques(graph_ensemble_simplify)
 is.connected(graph_ensemble_simplify)
 
 comps <- decompose.graph(graph_ensemble_simplify)
+
+# sauve la composante connexes du graph
+V(graph_ensemble_simplify)$comps <- as.numeric(membership(components(graph_ensemble_simplify)))
+
+idimpl <- "V38"
+
+verif_relation(38)
+
+V(graph_ensemble_simplify)[name == idimpl]$comps
+
+un_sous_graph <- induced_subgraph()
+
+graphjs(induced_subgraph(graph_ensemble_simplify, vids = V(graph_ensemble_simplify)[comps == 2]))
+
+un_id <- "V38"
+
+graph_a_partir_id <- function(un_id, un_graph = graph_ensemble_simplify) {
+    # on calcul les composantes connexes 
+    V(un_graph)$comps <- as.numeric(membership(components(un_graph)))
+    # on produit un sous graphes qui prends tous les noeuds de la composantes connexes
+    # il faut que les vertexes soit nommés avec "name" puisque j'indexe dessus 
+    un_sous_graph <- induced_subgraph(un_graph, 
+                                  vids = V(un_graph)[comps == V(un_graph)[name == un_id]$comps])
+
+graphjs(un_sous_graph,
+        vertex.label = V(un_sous_graph)$usual_name, # il faut usual name
+        vertex.color = V(un_sous_graph)$colorV, # il faut colorV
+        vertex.size = 0.1, # pe modifier par degree
+        edge.color = E(un_sous_graph)$colorW, 
+        brush=TRUE)
+}
+
+graph_a_partir_id("V38")
+
+graphjs(induced_subgraph(graph_ensemble_simplify, vids = V(graph_ensemble_simplify)[comps == 4]))
 
 class(comps)
 
@@ -258,15 +295,12 @@ articulation.points(graph_principal)
 
 #  1 - sous graph ================================
 
-
 graph_principal <- decompose.graph(graph_ensemble_simplify, min.vertices = 599)[[1]]
 
 graphjs(graph_principal,  vertex.size = 0.1)
 
-
-
 #  2 - communauté sur le sous graph ================================
-## il y a plusieurs moyen de faire du cluster
+## il y a plusieurs moyens de faire du cluster
 
 # fastgreedy.community est un type de regroupement hierarchique
 graph_principal_cluster <- fastgreedy.community(graph_principal)
