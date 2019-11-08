@@ -134,30 +134,36 @@ relation_total.dat <- dplyr::left_join(Relation_renomer, implantation_renomer, b
 summary(relation_total.dat)
 # il y a des valeurs manquantes dans les lat/long de A (26) et B (46)
 
-test <- dplyr::filter(relation_total.dat, !is.na(lat) & !is.na(lat_link)) # on retire les NA, c'est 60 relations
-
+relation_total.dat <- dplyr::filter(relation_total.dat, !is.na(lat) & !is.na(lat_link)) # on retire les NA, c'est 60 relations
 
 # 2.  On passe en sf =============================
+# je m'inspire de cette solution : 
+# https://stackoverflow.com/questions/58723988/create-numerous-lines-in-simple-features-from-list-of-coordinates-in-r
+
+# matrice de départ
+from.dat  <- relation_total.dat %>% 
+                select(lat, lng) %>% 
+                as.matrix()
+
+#matrice d'arrivé
+to.dat <- relation_total.dat %>% 
+                select(lat_link, lng_link) %>% 
+                as.matrix()
 
 
-Temp<-st_as_sf(TliensX0,coords = c("lng_link", "lat_link"),crs = 4326) %>% 
-    st_transform(2154)
+relation_total.dat$geometry <- do.call(st_sfc,                                                             # on fait une fonction sfc
+                lapply(                                                             # on fait un apply sur chaque lignes
+                    1:nrow(relation_total.dat),
+                    function(i){                              
+                        st_linestring(                                              # qui va tracer des lignes
+                            matrix(                                                 # en prenant les points dans une matrics
+                                c(from.dat[i,], to.dat[i,]), ncol=2,byrow=TRUE)     # composé du couple de point de départ et arrivé
+                                        )  }     )  )
 
-# on transforme l'objet spatial  en objet non spatial (tibble), doté d'une colonne de géométrie
-Temp <- Temp %>%
-    mutate(geom_link = geometry) %>% # recopie la géometrie dans une nouvelle colonne "geom_link"
-    st_drop_geometry() %>% # suppression de la géométrie
-    as_tibble() 
+relation_total.shp <- st_as_sf(relation_total.dat, sf_column_name = "geometry", crs = 4326) %>% 
+                            st_transform(2154)
+# calcule distance 
 
-Temp2<-st_as_sf(select(TliensX0,idfactoid,lat,lng),coords = c("lng", "lat"), crs = 4326) %>% 
-    st_transform(2154)%>%
-    mutate(geom_impl = geometry) %>% # recopie la géometrie dans une nouvelle colonne "geom_link"
-    st_drop_geometry() %>% # suppression de la géométrie
-    as_tibble() 
-Temp <- Temp %>%
-    left_join(Temp2, by ="idfactoid") 
-class(Temp)
-# glimpse(Temp)
 TliensDist <- Temp %>%
     mutate(distance = st_distance(x = geom_impl, y = geom_link, by_element = TRUE)/1000) %>% 
     mutate(distance=as.numeric(distance))
