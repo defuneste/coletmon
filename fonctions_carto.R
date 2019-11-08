@@ -85,10 +85,203 @@ mapImplVite <- function(ImpSel.shp, Vcolor)
         else { mapview::mapview(ImpSel.shp, zcol = Vcolor)}
 }
 
-# 1 - leaflet =====
 
-library(leaflet)
+##.###################################################################################33
+## I. Calculs distances/ portée du réseau de chaque implantation ====
+##.#################################################################################33
+# 1.  On charge les fichiers ===========================
+# ici je vais reprendre et documenter le travail d'Hélène
+# Hélène travaille pas mal en tidyverse, on va donc charger ses bibliotheques 
+# je simplifierais en R base au besoin
 
-carte <- leaflet() %>% 
-    addTiles()
+library(dplyr) 
+library(sf)
+
+fait.dat <- read.csv("data/fait.txt")
+implantation.dat <- read.csv("data/implantation.txt")
+# les relations sont un sous ensemble des faits
+relation.dat <- fait.dat[fait.dat$caracNew == "Relations" ,]
+dim(relation.dat)
+
+relation.dat <- relation.dat[relation.dat$modAgreg != "A", ] # on enlève A pour n' avoir que D
+relation.dat <- relation.dat[relation.dat$modAgreg != "X", ] # on enlève X
+dim(relation.dat)
+
+
+# 1.  On construit un nouveau tableau qui contient les lat/long de chaque cote de la relation ===========================
+# l'objectif est de dessiner les liens sur une carte : de A -> B
+# Hélène indique que les lat/long dans relations.dat sont celles de l'implantation (idimplantation) 
+# et pas celle lièe (fklinked_implantation) 
+
+Relation_renomer <- dplyr::rename(relation.dat,                                 # rename est pas mal utilisé donc on precise la library
+                                  idimpl_link=fklinked_implantation,            # ici on prend l'id lié
+                                  usual_name_link=linked_implantation_name) %>% # idem pour le nom lié
+                    dplyr::select(-X)                                           # on pipe pour verifier X que j' avais fait lors mon export
+
+# je vais decouper un peu le pipe d'Hélène avec une table produite pour la jointure 
+# qui va comporter les lat/long des implantations liées
+
+implantation_renomer <- implantation.dat %>% 
+                            dplyr::select(idimpl_link = idimplantation, # selon la doc on peut directement renomer dans un select
+                                          lat_link = lat, 
+                                          lng_link = lng, 
+                                          Dioc_link = Diocese) 
+                            
+# on fait la jointure 
+
+relation_total.dat <- dplyr::left_join(Relation_renomer, implantation_renomer, by = "idimpl_link")
+
+summary(relation_total.dat)
+# il y a des valeurs manquantes dans les lat/long de A (26) et B (46)
+
+test <- dplyr::filter(relation_total.dat, !is.na(lat) & !is.na(lat_link)) # on retire les NA, c'est 60 relations
+
+
+# 2.  On passe en sf =============================
+
+
+Temp<-st_as_sf(TliensX0,coords = c("lng_link", "lat_link"),crs = 4326) %>% 
+    st_transform(2154)
+
+# on transforme l'objet spatial  en objet non spatial (tibble), doté d'une colonne de géométrie
+Temp <- Temp %>%
+    mutate(geom_link = geometry) %>% # recopie la géometrie dans une nouvelle colonne "geom_link"
+    st_drop_geometry() %>% # suppression de la géométrie
+    as_tibble() 
+
+Temp2<-st_as_sf(select(TliensX0,idfactoid,lat,lng),coords = c("lng", "lat"), crs = 4326) %>% 
+    st_transform(2154)%>%
+    mutate(geom_impl = geometry) %>% # recopie la géometrie dans une nouvelle colonne "geom_link"
+    st_drop_geometry() %>% # suppression de la géométrie
+    as_tibble() 
+Temp <- Temp %>%
+    left_join(Temp2, by ="idfactoid") 
+class(Temp)
+# glimpse(Temp)
+TliensDist <- Temp %>%
+    mutate(distance = st_distance(x = geom_impl, y = geom_link, by_element = TRUE)/1000) %>% 
+    mutate(distance=as.numeric(distance))
+
+
+Temp2<-TliensDist %>% 
+    group_by(idimplantation,usual_name,modAgreg) %>% 
+    summarise (meandist=mean(distance),
+               mindist=min(distance),
+               maxdist=max(distance))
+Tliensres1<-Tliensres1 %>% 
+    left_join(Temp2,by=c("idimplantation","usual_name","modAgreg"))
+
+ggplot(filter(Tliensres1,nbLien>1),
+       aes(x=nbLien,y=meandist, colour=modAgreg))+
+    geom_point()
+# scale_colour_manual(values = cols)
+rm(Temp,Temp2)
+#rm(TliensDist)
+
+#transformation du bipoint en polyligne sur distancs non nulles  
+Temp<-filter(TliensDist,distance<=0)
+
+Temp2 <- TliensDist %>%
+    filter(distance > 0) %>%
+    select(idfactoid,geom_link,geom_impl) %>%
+    gather(key = "type", value = "geom", -idfactoid) %>% # On passe en tableau long, pour avoir 2 lignes par entitÃ© : une qui donnera la geom du centroide, et une seconde pour la geom de l'entitÃ©
+    st_sf(sf_column_name = "geom") %>% # on convertie l'objet en sf
+    group_by(idfactoid) %>% # le group_by + summarise font une fusion des points, on obtient donc du multipoint avec pour chaque ligne 2 points correspondant Ã  centroide + geometrie
+    summarise() %>%
+    st_cast(to = "LINESTRING")# On convertie l'objet multipoint en linÃ©aire : il trace une ligne entre les 2 points
+
+TliensFin <- Temp2 %>%
+    left_join(TliensX, by = "idfactoid") %>%
+    mutate(modalite = iconv(modalite, to = "UTF-8"))
+
+mapview(TliensFin,zcol="modAgreg")
+mapview(TliensFin,zcol="modalite")
+
+mapview(TliensFin,zcol="modAgreg",burst=TRUE)
+mapview(TliensFin,zcol="modalite",burst=TRUE,col.regions = cols)
+
+#############♣ Export pour QGIS
+Tliensres1<-rename(Tliensres1,idimplantation=idimpl_link,
+                   usual_name=usual_name_link)
+write.csv(Tliensres1, file="testLiens/RelationsDistances.csv",na="",row.names = FALSE)
+write.csv(ImplNew, file="testLiens/ImplNew.csv",na="",row.names = FALSE)
+
+Temp <- filter(ImplNew,!is.na(lat)) %>% 
+    st_as_sf(coords = c("lng", "lat"), crs = 4326) %>% 
+    st_transform(2154) 
+
+st_write(Temp, "testLiens/ImplXY", driver="ESRI Shapefile")
+st_write(TliensFin, "testLiens/LiensFin", driver="ESRI Shapefile")
+
+write.csv(TliensX, file="testLiens/RelationsLiens.csv",na="",row.names = FALSE)
+
+###########
+#################test carto  avec une implantation
+centreid<-5   #"Auxerre"
+centreid<-1100   #"Abbaye de Charroux"
+
+TliensXi<-TliensX %>% 
+    filter(idimplantation==centreid) %>% 
+    select(-date_start_min:-date_stop_max)
+TliensXi<-arrange(TliensXi,idimplantation, modalite,idimpl_link)
+
+Temp<-filter(ungroup(ImplNew),idimplantation==centreid) %>% 
+    select(idimplantation,usual_name,lat,lng) %>% 
+    mutate(lat_link=lat,
+           lng_link=lng,
+           idimpl_link=idimplantation,
+           usual_name_link=usual_name)
+
+TliensXi <-TliensXi %>% 
+    filter(idimplantation==centreid)%>% 
+    filter(!is.na(lat_link)) %>% 
+    bind_rows(Temp)
+
+#Après avoir compilé les fonctions de Col&MonCarto
+#Avant d'envoyer à la procedure uil faut renommer les lat_link_>lat...
+TCartoLiens <-rename(TliensXi,
+                     lat0=lat,lng0=lng,lat=lat_link,lng=lng_link)
+TCartoLiens<-as.data.frame(TCartoLiens)
+
+nbtype<-length(unique(TCartoLiens$modalite))
+
+initmapview(nbtype,"Set1")
+m<-mapImplVite(TCartoLiens,"modalite")
+m
+mapshot(m, url = paste0(getwd(), "/AbbayeCharroux.html"))
+
+
+
+
+############GGplot2 des liens mais problème de couleur
+TCartoLiens<- st_as_sf(TCartoLiens,coords = c("lng", "lat"), crs = 4326) %>% 
+    st_transform(2154)
+ggplot() + 
+    geom_sf(data = DioFond)+
+    geom_sf(data = TCartoLiens, aes(colour=modalite,fill=modalite),cex=3)+
+    scale_fill_manual(values = cols)+
+    scale_colour_manual(values = cols)+
+    geom_sf(data = filter(TCartoLiens,idimplantation==centreid), aes(colour = modalite, fill = modalite)) +
+    coord_sf()+
+    scale_fill_manual(values = cols)+
+    scale_colour_manual(values = cols)
+
+#Carto de tout les liens
+ggplot() +
+    geom_sf(data = DioFond)+
+    geom_sf(data = TCartoLiens, 
+            aes(colour = modalite, fill = modalite),size=1) +
+    coord_sf()+
+    scale_fill_manual(values = cols)+
+    scale_colour_manual(values = cols)
+
+
+# scale_colour_brewer(palette = "Set1")+
+# scale_fill_brewer(palette = "Set1")
+
+
+
+
+
+
 
