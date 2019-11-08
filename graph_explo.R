@@ -186,9 +186,9 @@ E(graph_ensemble_simplify)$colorW <- ifelse(E(graph_ensemble_simplify)$weight ==
 V(graph_ensemble_simplify)$colorV <- "gray60"
 
 graphjs(graph_ensemble_simplify, 
-        vertex.label = V(graph_ensemble_simplify)$usual_name,
+        vertex.label = paste(V(graph_ensemble_simplify)$usual_name, V(graph_ensemble_simplify)$name),
         vertex.color = V(graph_ensemble_simplify)$colorV,
-        vertex.size = 0.1,
+        vertex.size = log(sapply(un.voisin, vcount))/10,
         edge.color = E(graph_ensemble_simplify)$colorW)
 
 #  4 - degrés et degrés des voisins ================================
@@ -260,14 +260,15 @@ graph_a_partir_id <- function(un_id, un_graph = graph_ensemble_simplify) {
                                   vids = V(un_graph)[comps == V(un_graph)[name == un_id]$comps])
 
 graphjs(un_sous_graph,
-        vertex.label = V(un_sous_graph)$usual_name, # il faut usual name
+        vertex.label = paste(V(un_sous_graph)$usual_name, V(un_sous_graph)$name), # il faut usual name
         vertex.color = V(un_sous_graph)$colorV, # il faut colorV
-        vertex.size = 0.1, # pe modifier par degree
+        vertex.size = 0.2, # pe modifier par degree
         edge.color = E(un_sous_graph)$colorW, 
         brush=TRUE)
 }
 
-graph_a_partir_id("V38")
+
+graph_a_partir_id("V99")
 
 graphjs(induced_subgraph(graph_ensemble_simplify, vids = V(graph_ensemble_simplify)[comps == 4]))
 
