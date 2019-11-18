@@ -11,6 +11,7 @@ library(dplyr)
 library(sf)
 library(ggplot2)
 library(plotly)
+library(purrr)
 
 fait.dat <- read.csv("data/fait.txt")
 implantation.dat <- read.csv("data/implantation.txt")
@@ -118,20 +119,28 @@ mapview(relation_total.shp, zcol ="modAgreg",burst=TRUE)
 ## II. des evolutions au cours du temps ====
 ##.#################################################################################33
 
+
+test <- relation_total.shp %>% 
+    st_drop_geometry() %>% 
+    split(.$date_startC) %>% 
+    purrr::accumulate(~bind_rows(.x, .y)) %>% 
+    bind_rows(.id = "annee")
+
+
 geo <- list(
     scope = 'europe')
 
 
 plot_geo() %>%
     add_markers(
-        data = relation_total.shp, x = ~lng, y = ~lat, text = ~usual_name,
+        data = test, x = ~lng, y = ~lat, text = ~usual_name,
         hoverinfo = "text", alpha = 0.5
     ) %>%
     add_segments(
-        data = relation_total.shp,
+        data = test,
         x = ~lng, xend = ~lng_link,
         y = ~lat, yend = ~lat_link,
-        alpha = 0.5, size = I(2), hoverinfo = "none", frame = ~date_startC
+        alpha = 0.5, size = I(2), hoverinfo = "none", frame = ~annee
     ) %>%
     layout(
         title = 'test',
