@@ -57,12 +57,12 @@ relation_total.dat <- dplyr::filter(relation_total.dat, !is.na(lat) & !is.na(lat
 
 # matrice de départ
 from.dat  <- relation_total.dat %>% 
-    select(lat, lng) %>% 
+    select(lng, lat) %>% 
     as.matrix()
 
 #matrice d'arrivé
 to.dat <- relation_total.dat %>% 
-    select(lat_link, lng_link) %>% 
+    select(lng_link, lat_link) %>% 
     as.matrix()
 
 
@@ -84,14 +84,14 @@ relation_total.shp$distance_km <- round(                                    # on
                             as.numeric(                                     # je drop units 
                                 st_length(relation_total.shp)/1000), 2)     # on mesure la distance sur la geometry 
 
-
-names(relation_total.shp)
-
+# un ggplot rapide pour regarder
 ggplot(relation_total.shp, aes(modalite, distance_km, color = modalite)) +
                                             geom_boxplot()
 
+# on enleve les facteurs inutilisés dans modalite
 relation_total.shp$modalite <- factor(relation_total.shp$modalite)
 
+# un plotly
 f <- list(
     family = "Courier New, monospace",
     size = 18,
@@ -103,48 +103,43 @@ y <- list(
     titlefont = f
 )
 
+# j'ai dropé la geometry car j'ai l'impression que cela me doublais dans ce cas les lignes
 plot_ly(st_drop_geometry(relation_total.shp), y = ~ distance_km, color = ~ modalite, type = "box", 
+        # ici on affaiche les valeur et on rajoute le nom/id des implantations dans les deux sens
         text = ~paste(paste(relation_total.shp$usual_name, relation_total.shp$idimplantation), 
                       paste(relation_total.shp$usual_name_link, relation_total.shp$idimpl_link), sep = "\n")) %>% 
     layout(yaxis = y)
 
 
-Temp2<-TliensDist %>% 
-    group_by(idimplantation,usual_name,modAgreg) %>% 
-    summarise (meandist=mean(distance),
-               mindist=min(distance),
-               maxdist=max(distance))
-Tliensres1<-Tliensres1 %>% 
-    left_join(Temp2,by=c("idimplantation","usual_name","modAgreg"))
+library(mapview)
+mapview(relation_total.shp, zcol ="modAgreg",burst=TRUE)
 
-ggplot(filter(Tliensres1,nbLien>1),
-       aes(x=nbLien,y=meandist, colour=modAgreg))+
-    geom_point()
-# scale_colour_manual(values = cols)
-rm(Temp,Temp2)
-#rm(TliensDist)
+##.###################################################################################33
+## II. des evolutions au cours du temps ====
+##.#################################################################################33
 
-#transformation du bipoint en polyligne sur distancs non nulles  
-Temp<-filter(TliensDist,distance<=0)
+geo <- list(
+    scope = 'europe')
 
-Temp2 <- TliensDist %>%
-    filter(distance > 0) %>%
-    select(idfactoid,geom_link,geom_impl) %>%
-    gather(key = "type", value = "geom", -idfactoid) %>% # On passe en tableau long, pour avoir 2 lignes par entitÃ© : une qui donnera la geom du centroide, et une seconde pour la geom de l'entitÃ©
-    st_sf(sf_column_name = "geom") %>% # on convertie l'objet en sf
-    group_by(idfactoid) %>% # le group_by + summarise font une fusion des points, on obtient donc du multipoint avec pour chaque ligne 2 points correspondant Ã  centroide + geometrie
-    summarise() %>%
-    st_cast(to = "LINESTRING")# On convertie l'objet multipoint en linÃ©aire : il trace une ligne entre les 2 points
 
-TliensFin <- Temp2 %>%
-    left_join(TliensX, by = "idfactoid") %>%
-    mutate(modalite = iconv(modalite, to = "UTF-8"))
+plot_geo() %>%
+    add_markers(
+        data = relation_total.shp, x = ~lng, y = ~lat, text = ~usual_name,
+        hoverinfo = "text", alpha = 0.5
+    ) %>%
+    add_segments(
+        data = relation_total.shp,
+        x = ~lng, xend = ~lng_link,
+        y = ~lat, yend = ~lat_link,
+        alpha = 0.5, size = I(2), hoverinfo = "none", frame = ~date_startC
+    ) %>%
+    layout(
+        title = 'test',
+        geo = geo, showlegend = TRUE
+    )
 
-mapview(TliensFin,zcol="modAgreg")
-mapview(TliensFin,zcol="modalite")
-
-mapview(TliensFin,zcol="modAgreg",burst=TRUE)
-mapview(TliensFin,zcol="modalite",burst=TRUE,col.regions = cols)
+# source d'info    https://stackoverflow.com/questions/40350925/how-to-create-a-choropleth-map-using-plot-geo
+# autre option https://stackoverflow.com/questions/36554605/cant-loop-with-rs-leaflet-package-to-produce-multiple-maps/36587525#36587525
 
 #############♣ Export pour QGIS
 Tliensres1<-rename(Tliensres1,idimplantation=idimpl_link,
