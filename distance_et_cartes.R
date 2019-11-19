@@ -119,13 +119,36 @@ mapview(relation_total.shp, zcol ="modAgreg",burst=TRUE)
 ## II. des evolutions au cours du temps ====
 ##.#################################################################################33
 
+names(relation_total.shp)
+summary(relation_total.shp)
 
-test <- relation_total.shp %>% 
-    st_drop_geometry() %>% 
-    split(.$date_startC) %>% 
+# l'idee est de refaire un jeux de données ou le temps est cumulatif pour une animation
+# on dessine une frame par periode et il faut donc que l' ensemble des liens present à ce moment soient présent dans 
+# le jeux de données 
+relation_slim <- relation_total.shp %>%  # on va faire un jeux de données plus léger
+    st_drop_geometry() %>%  # on drop la geometry
+    # puis tout un tas de variables peux ou pas utile
+    select(-c(caracteristique, caracNew, date_start_min, date_start_max, date_stop_min, date_stop_max, location_granularity, Diocese, Dioc_link, idfactoid, distance_km)) %>% 
+    # on impute les NA avec la valeur mins
+    mutate(date_startC = ifelse(is.na(relation_total.shp$date_startC), min(relation_total.shp$date_startC, na.rm = T), relation_total.shp$date_startC)) 
+
+# j'ai fait une pause dans le pipe 
+test <- relation_slim %>%  
+    # on renome debut avec un cut, repasser en année 
+    mutate(debut = (as.numeric(cut(relation_slim$date_startC, seq(400,1800,50))) * 50) + 400) %>% 
+    # on split en liste par debut
+    split(.$debut) %>% 
+    # on accumule les lignes passées
     purrr::accumulate(~bind_rows(.x, .y)) %>% 
-    bind_rows(.id = "annee")
+    #set_names(seq(400,1800,50)) %>% 
+    bind_rows(.id = "frame")  %>% 
+    # on repasse en mumeric
+    mutate(frame = as.numeric(frame))
+   
+#### on va simplifier les implantations
 
+implantations_slim <- implantation.dat %>% 
+    select(idimplantation, usual_name, lat, lng)
 
 geo <- list(
     scope = 'europe')
@@ -133,14 +156,15 @@ geo <- list(
 
 plot_geo() %>%
     add_markers(
-        data = test, x = ~lng, y = ~lat, text = ~usual_name,
+        data = implantations_slim, x = ~lng, y = ~lat, text = ~paste(idimplantation, usual_name),
         hoverinfo = "text", alpha = 0.5
     ) %>%
     add_segments(
         data = test,
         x = ~lng, xend = ~lng_link,
         y = ~lat, yend = ~lat_link,
-        alpha = 0.5, size = I(2), hoverinfo = "none", frame = ~annee
+        alpha = 0.5, size = I(1.5), hoverinfo = "none", 
+        frame = ~frame, color = ~modalite
     ) %>%
     layout(
         title = 'test',
