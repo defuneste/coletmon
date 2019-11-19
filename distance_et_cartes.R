@@ -130,12 +130,13 @@ relation_slim <- relation_total.shp %>%  # on va faire un jeux de données plus 
     # puis tout un tas de variables peux ou pas utile
     select(-c(caracteristique, caracNew, date_start_min, date_start_max, date_stop_min, date_stop_max, location_granularity, Diocese, Dioc_link, idfactoid, distance_km)) %>% 
     # on impute les NA avec la valeur mins
-    mutate(date_startC = ifelse(is.na(relation_total.shp$date_startC), min(relation_total.shp$date_startC, na.rm = T), relation_total.shp$date_startC)) 
+    mutate(date_startC = ifelse(is.na(relation_total.shp$date_startC), min(relation_total.shp$date_startC, na.rm = T), relation_total.shp$date_startC))
 
 # j'ai fait une pause dans le pipe 
 test <- relation_slim %>%  
     # on renome debut avec un cut, repasser en année 
-    mutate(debut = (as.numeric(cut(relation_slim$date_startC, seq(400,1800,50))) * 50) + 400) %>% 
+    mutate(debut = (as.numeric(cut(relation_slim$date_startC, seq(400,1800,50))) * 50) + 400,
+           date_stopC = ifelse(is.na(relation_slim$date_stopC), debut, date_stopC)) %>% 
     # on split en liste par debut
     split(.$debut) %>% 
     # on accumule les lignes passées
@@ -145,6 +146,8 @@ test <- relation_slim %>%
     # on repasse en mumeric
     mutate(frame = as.numeric(frame))
    
+View(test[[4]])
+
 #### on va simplifier les implantations
 
 implantations_slim <- implantation.dat %>% 
