@@ -120,7 +120,6 @@ mapview(relation_total.shp, zcol ="modAgreg",burst=TRUE)
 ##.#################################################################################33
 
 names(relation_total.shp)
-summary(relation_total.shp)
 
 # l'idee est de refaire un jeux de données ou le temps est cumulatif pour une animation
 # on dessine une frame par periode et il faut donc que l' ensemble des liens present à ce moment soient présent dans 
@@ -128,12 +127,13 @@ summary(relation_total.shp)
 relation_slim <- relation_total.shp %>%  # on va faire un jeux de données plus léger
     st_drop_geometry() %>%  # on drop la geometry
     # puis tout un tas de variables peux ou pas utile
+    # changer pour garder ce que l'on garde c' est plus lisible
     select(-c(caracteristique, caracNew, date_start_min, date_start_max, date_stop_min, date_stop_max, location_granularity, Diocese, Dioc_link, idfactoid, distance_km)) %>% 
     # on impute les NA avec la valeur mins
     mutate(date_startC = ifelse(is.na(relation_total.shp$date_startC), min(relation_total.shp$date_startC, na.rm = T), relation_total.shp$date_startC))
 
 # j'ai fait une pause dans le pipe 
-test <- relation_slim %>%  
+test2 <- relation_slim %>%  
     # on renome debut avec un cut, repasser en année 
     mutate(debut = (as.numeric(cut(relation_slim$date_startC, seq(400,1800,50))) * 50) + 400,
            date_stopC = ifelse(is.na(relation_slim$date_stopC), debut, date_stopC)) %>% 
@@ -145,8 +145,24 @@ test <- relation_slim %>%
     bind_rows(.id = "frame")  %>% 
     # on repasse en mumeric
     mutate(frame = as.numeric(frame))
-   
-View(test[[4]])
+ 
+test3  <- test2[test2$frame < test2$date_stopC,]
+
+interval(435,520)
+
+as.Date("435", format = "%Y")
+
+as.numeric(format(435, "%Y"))
+
+cut(relation_slim$date_startC, seq(400,1800,50))
+
+x <- sample(0:20, 100, replace=TRUE)
+x
+test_x <- cut(x, breaks=c(0, 10, 20), include.lowest=TRUE)
+
+between(435, 400, 450)
+
+View(test[[2]])
 
 #### on va simplifier les implantations
 
@@ -163,7 +179,7 @@ plot_geo() %>%
         hoverinfo = "text", alpha = 0.5
     ) %>%
     add_segments(
-        data = test,
+        data = test3,
         x = ~lng, xend = ~lng_link,
         y = ~lat, yend = ~lat_link,
         alpha = 0.5, size = I(1.5), hoverinfo = "none", 
