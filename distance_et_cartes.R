@@ -132,6 +132,24 @@ relation_slim <- relation_total.shp %>%  # on va faire un jeux de données plus 
     # on impute les NA avec la valeur mins
     mutate(date_startC = ifelse(is.na(relation_total.shp$date_startC), min(relation_total.shp$date_startC, na.rm = T), relation_total.shp$date_startC))
 
+interval_sup <- (as.numeric(cut(seq(400,1800,50), seq(400,1800,50))) * 50) + 400
+
+relation_slim_intervall_all <- merge(relation_slim, interval_sup ,all = TRUE)
+names(relation_slim_intervall_all)[names(relation_slim_intervall_all) == "y"] <-  "interval_sup"
+
+relation_slim_intervall_all$interval_inf <- relation_slim_intervall_all$interval_sup -50
+
+test_interval <-  relation_slim_intervall_all[relation_slim_intervall_all$date_startC >= relation_slim_intervall_all$interval_inf &
+                                                relation_slim_intervall_all$date_stopC<= relation_slim_intervall_all$interval_inf,]
+
+test_interval <- test_interval[!is.na(test_interval$idimplantation),]
+
+summary(test_interval)
+dim(test_interval)
+
+class(relation_slim_intervall_all$y)
+
+
 # j'ai fait une pause dans le pipe 
 test2 <- relation_slim %>%  
     # on renome debut avec un cut, repasser en année 
@@ -148,21 +166,7 @@ test2 <- relation_slim %>%
  
 test3  <- test2[test2$frame < test2$date_stopC,]
 
-interval(435,520)
 
-as.Date("435", format = "%Y")
-
-as.numeric(format(435, "%Y"))
-
-cut(relation_slim$date_startC, seq(400,1800,50))
-
-x <- sample(0:20, 100, replace=TRUE)
-x
-test_x <- cut(x, breaks=c(0, 10, 20), include.lowest=TRUE)
-
-between(435, 400, 450)
-
-View(test[[2]])
 
 #### on va simplifier les implantations
 
