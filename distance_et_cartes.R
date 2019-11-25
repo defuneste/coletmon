@@ -126,47 +126,25 @@ names(relation_total.shp)
 # le jeux de données 
 relation_slim <- relation_total.shp %>%  # on va faire un jeux de données plus léger
     st_drop_geometry() %>%  # on drop la geometry
-    # puis tout un tas de variables peux ou pas utile
-    # changer pour garder ce que l'on garde c' est plus lisible
-    select(-c(caracteristique, caracNew, date_start_min, date_start_max, date_stop_min, date_stop_max, location_granularity, Diocese, Dioc_link, idfactoid, distance_km)) %>% 
+    # on ne garde que ce qui est utile
+    select(c(idimplantation, usual_name,modAgreg,modalite,idimpl_link,usual_name_link,lat,lng,date_startC,date_stopC,DureeFact,lat_link, lng_link ))  
     # on impute les NA avec la valeur mins
-    mutate(date_startC = ifelse(is.na(relation_total.shp$date_startC), min(relation_total.shp$date_startC, na.rm = T), relation_total.shp$date_startC))
+    #mutate(date_startC = ifelse(is.na(relation_total.shp$date_startC), min(relation_total.shp$date_startC, na.rm = T), relation_total.shp$date_startC))
 
-interval_sup <- (as.numeric(cut(seq(400,1800,50), seq(400,1800,50))) * 50) + 400
+relation_slim <- relation_slim[!is.na(relation_slim$date_startC),]
+
+interval_sup <-  seq(375,1825,50)
 
 relation_slim_intervall_all <- merge(relation_slim, interval_sup ,all = TRUE)
-names(relation_slim_intervall_all)[names(relation_slim_intervall_all) == "y"] <-  "interval_sup"
 
-relation_slim_intervall_all$interval_inf <- relation_slim_intervall_all$interval_sup -50
+names(relation_slim_intervall_all)[names(relation_slim_intervall_all) == "y"] <-  "interval_inf"
 
-test_interval <-  relation_slim_intervall_all[relation_slim_intervall_all$date_startC >= relation_slim_intervall_all$interval_inf &
-                                                relation_slim_intervall_all$date_stopC<= relation_slim_intervall_all$interval_inf,]
+relation_slim_intervall_all$interval_sup <- relation_slim_intervall_all$interval_inf + 50
 
-test_interval <- test_interval[!is.na(test_interval$idimplantation),]
+test_interval <-  relation_slim_intervall_all[relation_slim_intervall_all$interval_sup > relation_slim_intervall_all$date_startC ,]
+test_interval2 <- test_interval[test_interval$interval_inf <= test_interval$date_stopC,]
 
-summary(test_interval)
-dim(test_interval)
-
-class(relation_slim_intervall_all$y)
-
-
-# j'ai fait une pause dans le pipe 
-test2 <- relation_slim %>%  
-    # on renome debut avec un cut, repasser en année 
-    mutate(debut = (as.numeric(cut(relation_slim$date_startC, seq(400,1800,50))) * 50) + 400,
-           date_stopC = ifelse(is.na(relation_slim$date_stopC), debut, date_stopC)) %>% 
-    # on split en liste par debut
-    split(.$debut) %>% 
-    # on accumule les lignes passées
-    purrr::accumulate(~bind_rows(.x, .y)) %>% 
-    #set_names(seq(400,1800,50)) %>% 
-    bind_rows(.id = "frame")  %>% 
-    # on repasse en mumeric
-    mutate(frame = as.numeric(frame))
- 
-test3  <- test2[test2$frame < test2$date_stopC,]
-
-
+summary(test_interval2)
 
 #### on va simplifier les implantations
 
@@ -183,11 +161,11 @@ plot_geo() %>%
         hoverinfo = "text", alpha = 0.5
     ) %>%
     add_segments(
-        data = test3,
+        data = test_interval2,
         x = ~lng, xend = ~lng_link,
         y = ~lat, yend = ~lat_link,
         alpha = 0.5, size = I(1.5), hoverinfo = "none", 
-        frame = ~frame, color = ~modalite
+        frame = ~interval_inf, color = ~modalite
     ) %>%
     layout(
         title = 'test',
@@ -196,6 +174,33 @@ plot_geo() %>%
 
 # source d'info    https://stackoverflow.com/questions/40350925/how-to-create-a-choropleth-map-using-plot-geo
 # autre option https://stackoverflow.com/questions/36554605/cant-loop-with-rs-leaflet-package-to-produce-multiple-maps/36587525#36587525
+
+
+library(crosstalk)
+
+shared_interval <- SharedData$new(test_interval2, key = ~interval_sup)
+
+geo_relation <- plot_geo() %>%
+    add_markers(
+        data = implantations_slim, x = ~lng, y = ~lat, text = ~paste(idimplantation, usual_name),
+        hoverinfo = "text", alpha = 0.5
+    ) %>%
+    add_segments(
+        data = shared_interval,
+        x = ~lng, xend = ~lng_link,
+        y = ~lat, yend = ~lat_link,
+        alpha = 0.5, size = I(1.5), hoverinfo = "none", color = ~modalite
+    ) %>%
+    layout(
+        title = 'test',
+        geo = geo, showlegend = TRUE
+    )
+
+hist_relation <- plot_ly(shared_interval, x = ~interval_sup) %>% add_histogram()
+
+
+subplot(hist_relation, geo_relation) %>% 
+    highlight(on = "plotly_click")
 
 #############♣ Export pour QGIS
 Tliensres1<-rename(Tliensres1,idimplantation=idimpl_link,
