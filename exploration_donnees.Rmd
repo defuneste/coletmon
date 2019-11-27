@@ -34,6 +34,8 @@ fait.dat <- read.csv("data/fait.txt", stringsAsFactors = FALSE) # besoin d'ajout
 implantation.dat <- read.csv("data/implantation.txt")
 # une exraction des relations
 relation.dat <- fait.dat[fait.dat$caracNew == "Relations" ,]
+# on extrait les Déplacements 
+relation.dat <- relation.dat[!relation.dat$modaNiv1 == "Déplacement",]
 ```
 
 Les données sont regroupées en deux tableaux :
@@ -45,18 +47,10 @@ C'est du second que l'on tire les relations.
 
 ## Prise en main
 
-```{r bon encoding}
-# l'encoding semble en UTF8 et latin1 en fonction des colonnes/sources de la données
-# la fonction Encoding permet de le specifier
-# Encoding(fait.dat$usual_name) <- "latin1"
-# Encoding(fait.dat$caracteristique) <- "latin1"
-# Encoding(fait.dat$linked_implantation_name) <- "latin1"
-```
-
-Il faut specifier les encoding de 3 colonnes qui sont en "Latin1" alors que le reste semble être en UTF8. Au final knitr semble avoir un problème avec du "multi encoding", j'ai donc fait un export/import le tout en UTF8.
+Il faut spécifier les encoding de 3 colonnes qui sont en "Latin1" alors que le reste semble être en UTF8. Au final knitr semble avoir un problème avec du "multi encoding", j'ai donc fait un export/import le tout en UTF8.
 
 
-Le tableau \@ref(tab:presenceNa) reprend les nombre de données manquantes par variables. L'absence la plus importante est sur les dates (210 et 206 manquantes), puis sur la localisation  (72 NA) avec lat/long et granularité et sur les diocése (11 NA). 
+Le tableau \@ref(tab:presenceNa) reprend les nombre de données manquantes par variables. L'absence la plus importante est sur les dates et durée (358) manquantes), puis sur la localisation  (109 NA) avec lat/long et granularité et sur les diocèse (11 NA). 
 
 ```{r, presenceNa, results="asis" }
 # un apply, passer en df qui compte le nombre de NA par colonne 
@@ -77,16 +71,12 @@ DT::datatable(relation_na.dat)
 
 ## Modalité des relations
 
-On obtient `r nrow(relation.dat)` factoides avec une `relation`. Le tableau \@ref(tab:modalite) répartit `modalite` en fonction des `modAgreg`. `H` de `modAgreg` ne correspond qu'aux associations de prière (`r nrow(relation.dat[relation.dat$modalite == "Association de prière",])`) et `X` ne correspond qu'aux déplacements d'institution (`r nrow(relation.dat[relation.dat$modalite == "Déplacement d'institution",])`). `A` et `D` correspondent aux relations ascendantes et descendantes comprises entre trois couples : 
+On obtient `r nrow(relation.dat)` factoides avec une `relation`. Le tableau \@ref(tab:modalite) répartit `modalite` en fonction des `modaNiv1`. Les relations peuvent être hiérarchiques ou horizontales, dans les cas hiérarchique, elles peuvent être ascendantes et descendantes. Elles peuvent ensuite être ascendantes/descendantes vers une école ou vers un autre type d'implantations. Les relations avec les écoles sont toujours d'appartenance/possession sauf dans un cas ou on est dans une filiation (ascendante/descendante) est ce une erreur de codage avec Filiation ascendante directe / hiérarchique descendante ?
 
-* `À la collation de / Droit de patronage`, 
-* `Appartient / à Possède` et 
-* `Filiation ascendante directe / Filiation descendante`.
-
-(ref:modalite-caption) Ventilation de modAgreg en fonction de modalite
+(ref:modalite-caption) Ventilation de modaNiv1 en fonction de modalité
 
 ```{r, modalite}
-knitr::kable(t(table(relation.dat$modAgreg, relation.dat$modalite)),
+knitr::kable(t(table(relation.dat$modaNiv1 , relation.dat$modalite)),
              caption = "(ref:modalite-caption)")
 ```
 
@@ -94,31 +84,25 @@ knitr::kable(t(table(relation.dat$modAgreg, relation.dat$modalite)),
 
 ### Exploration des données manquantes dans les dates 
 
-Il y a 210 et 206 valeurs manquantes au niveau des dates (cf. tableau \@ref(tab:presenceNa)). Ces valeurs manquantes sont consistantes dans les 6 champs de de description des dates : une absence de donnée en `date_start_XX` se retrouve en `date_stop_XX` et donc dans la fourchette produite.
+Il y a 283 valeurs manquantes au niveau des dates (cf. tableau \@ref(tab:presenceNa)). Ces valeurs manquantes ne sont pas consistantes dans les 6 champs de de description des dates. Ce n'est pas important pour moi (olivier) car j'utilise `date_startC` et `date_stopC`. Cependant on a 283 `date_startC` et 273 `date_stopC` mais on malgré tout 283 `DuréeFact` est-ce logique ? Puis-je utiliser `DuréeFact` quand je n'ai pas de `date_startC` ? 
 
-Il y a cependant 4 exceptions, où l'on a une `date_stop`, correspondant à deux couples A/D : 
+Voici les cas où l'on a une `date_stopC` et pas de `date_startC`  : 
 
 ```{r}
-NA_date <- relation.dat[is.na(relation.dat$date_start_min),]
+NA_date <- relation.dat[is.na(relation.dat$date_startC),]
 knitr::kable(NA_date[!is.na(NA_date$date_stop_max),c(2:4,7,13)]) # attention ici une indexation sur num de colonnes
 ```
 
-En regardant la répartition des valeurs manquantes temporelles en fonction de `modalite` (\@ref(tab:Namodalite)) on peut remarquer qu'un couple A/D n'est pas complet (60/61). 
+En regardant la répartition des valeurs manquantes temporelles en fonction de `modalite` (\@ref(tab:Namodalite)) on peut remarquer qu'un couple A/D n'est pas complet (60/61). (est ce toujours des couples dans la nouvelle classif ?)
 
-(ref:Namodalite-caption) Répartition des NA temporelles dans les modalite
+(ref:Namodalite-caption) Répartition des NA temporelles dans les modalité
 
 ```{r, Namodalite}
 knitr::kable(table(NA_date$modalite), caption = "(ref:Namodalite-caption)")
 ```
 
-Il me semble que c'est ce couple, Hélene peux tu regarder ? Je rajoute les valeurs ?
 
-```{r}
-rbind(NA_date[NA_date$modAgreg == "D",][76,],
-relation.dat[relation.dat$idimplantation == 2483,]) # attention c'est une indexation par rapport à un emplacement 
-```
-
-On peut produire une carte rapide des valeurs manquantes pour les dates. On en a un gros cluster autour de la region lyonaise et un autre autour de Charleville-Mézières. Est ce que cela suit une logique par rapport au données ? 
+On peut produire une carte rapide des valeurs manquantes pour les dates. On en a un gros cluster autour de la région lyonnaise et un autre autour de Charleville-Mézières. Est ce que cela suit une logique par rapport au données ? Avec la version 20191126 on a toujours ces clusters avec en plus des valeurs manquantes mieux réparties sur le territoires. 
 
 
 ```{r, include= F}
@@ -146,20 +130,20 @@ Et voici une interactive sous `mapview` : (il y a deux relations qui ne trouve p
 ```{r, message = FALSE, fig.align='center'}
 initmapview()
 mapview::mapview(diocese.shp, color = "gray75",  lwd = 1, # couleur et type du contour
-                     col.regions = "red",  alpha = 0.5,                  # couleur du fond et type
+                     col.regions = "grey",  alpha = 0.5,                  # couleur du fond et type
                      layer.name = "Diocèses" ) +
 mapview::mapview(implantation.shp, cex = 0.1, layer.name = "Implantations") +
-mapview::mapview(NA_date.shp, zcol = "modAgreg", layer.name = "Relations sans dates")
+mapview::mapview(NA_date.shp, zcol = "modaNiv1", layer.name = "Relations sans dates")
 ```
 
 
 ### Dates et durées pour les relations
 
-Je n'ai pas gardé les relations ascendantes pour les analyses suivantes car elles sont identiques. 
+Je n'ai pas gardé les relations `hiérarchique asc. Ecole` et  `hiérarchique ascendante` pour les analyses suivantes car elles sont identiques aux descendantes. 
 
-Les durées sont produites à partir des fourchettes de dates de début et de fin (`date_start_min/max` et `date_stop_min/max`). Il n'y a que trois cas d'ecarts importants entre `date_start_min` et `date_start_max` representé par la figure \@ref(fig:verif-datemin-et-max). Les données manquantes ne sont pas prises en compte. `date_stop_min` et `date_stop_max` sont identiques pour les relations.
+Les durées sont produites à partir des fourchettes de dates de début et de fin (`date_start_min/max` et `date_stop_min/max`). Il n'y a que trois cas d’écarts importants entre `date_start_min` et `date_start_max` représenté par la figure \@ref(fig:verif-datemin-et-max). Les données manquantes ne sont pas prises en compte. `date_stop_min` et `date_stop_max` sont identiques pour les relations.
 
-(ref:verif-datemin-et-max) Ecarts entre date_start_min et date_start_max
+(ref:verif-datemin-et-max) Écarts entre date_start_min et date_start_max
 
 ```{r, verif-datemin-et-max, message = FALSE, fig.cap="(ref:verif-datemin-et-max)", fig.align='center'}
 # c'est du js
@@ -177,7 +161,7 @@ y <- list(
   titlefont = f
 )
 # j'enleve les doublons A/D et NA
-relation_sans_A.dat <- relation.dat[relation.dat$modAgreg != "A",]
+relation_sans_A.dat <- subset(relation.dat, !(relation.dat$modaNiv1 == "hiérarchique asc. Ecole" | relation.dat$modaNiv1 == "hiérarchique ascendante") )
 relation_sans_A.dat <- relation_sans_A.dat[!is.na(relation_sans_A.dat$date_startC),]
 # il ignore les NA
 plot_ly(relation_sans_A.dat, x = relation_sans_A.dat$date_start_min, y = relation_sans_A.dat$date_start_max, type="scatter", # on def X et y
@@ -186,7 +170,7 @@ plot_ly(relation_sans_A.dat, x = relation_sans_A.dat$date_start_min, y = relatio
 layout(xaxis = x, yaxis = y)
 ```
 
-La figure \@ref(fig:date-modalite) regroupe les répartitions des dates (par tranches de 50 ans) de debut et fin des modes d'agrégations. Avec ce grain, assez grossier, on peut noter un premier pic dans les dates de relation autour 1100 pour les relations A/D (penser à detailler cette agrégation), suivit d'un second pic de debut de relation autour de 1300 qui n'est rattrapé en fin de relation qu'en 1750-1800. Il y a deux pics de dates de début/fin pour les associations de prières (`H`) le premier autour de 1250-1300 et le second autour de 1400 pour le debut puis 1450 pour la fin. 
+La figure \@ref(fig:date-modalite) regroupe les répartitions des dates (par tranches de 50 ans) de début et fin des modes d'agrégations. Avec ce grain, assez grossier, on peut noter un premier pic dans les dates de relation autour 1100 pour les relations A/D (penser à détailler cette agrégation), suivit d'un second pic de début de relation autour de 1300 qui n'est rattrapé en fin de relation qu'en 1750-1800. Il y a deux pics de dates de début/fin pour les associations de prières (`H`) le premier autour de 1250-1300 et le second autour de 1400 pour le début puis 1450 pour la fin. 
 
 (ref:date-modalite) Répartition des dates (début/fin) par tranches de 50 ans en fonction des modes d'agrégation 
 
@@ -196,7 +180,7 @@ relation_sans_NA_tidy.dat <- gather(relation_sans_A.dat, "date_startC", "date_st
 # date de début et de fin des relation par modAgreg
 date_modalite <- ggplot(relation_sans_NA_tidy.dat, aes(date, color = debut_fin)) +
     geom_freqpoly(binwidth = 50) + 
-    facet_wrap(~modAgreg) +
+    facet_wrap(~modaNiv1) +
     labs(x = "", y = "") +
     theme_bw()
 # c'est du js
@@ -218,11 +202,11 @@ ggplotly(date_modalite) %>%
     
 ```
 
-En plus des 210 valeurs manquantes il y `r nrow(relation_sans_A.dat[relation_sans_A.dat$DureeFact == 0,])` durées nulles (`DureeFact == 0`). Est-il possible que ces durées soit inférieures à notre grain temporelle (une année) ?
+En plus des 273-283 valeurs manquantes il y `r nrow(relation_sans_A.dat[relation_sans_A.dat$DureeFact == 0,])` durées nulles (`DureeFact == 0`). Est-il possible que ces durées soit inférieures à notre grain temporelle (une année) ?
 
 Il y a `r nrow(relation_sans_A.dat[relation_sans_A.dat$DureeFact != 0,])` durées de plus d'un an. 
 
-le tableau \@ref(tab:modalite-duree) représente la répartition des durées nulles par modalités.La filiation descendante, le déplacement d'institution et le droit de patronnage restent dans des proportions similaires entre les deux categories (0/1) par contre l'association de prière et la possésion semble proportionnelement plus souvent représentés par des durées (notre olivier : je n'ai pas fait de chi2 ni de comparaison multiple est-ce utile/nécessaire ?).   
+le tableau \@ref(tab:modalite-duree) représente la répartition des durées nulles par modalités. Le droit de patronage, l'association de prière et la possession restent dans des proportions similaires entre les deux catégories (0/1) par Filiation descendante semble proportionnellement moins souvent représentés par des durées (notre olivier : je n'ai pas fait de chi2 ni de comparaison multiple est-ce utile/nécessaire ?).   
 
 (ref:modalite-duree) Répartition des durées nulles (0) ou supérieures à 1 (1) par modalités
 
@@ -235,7 +219,7 @@ relation_sans_A.dat$durée01[relation_sans_A.dat$DureeFact != 0] <- 1
 knitr::kable(table(relation_sans_A.dat$modalite, relation_sans_A.dat$durée01), caption = "(ref:modalite-duree)") # puis un tableau
 ```
 
-La figure \@ref(fig:durre-modalite) 
+La figure \@ref(fig:durre-modalite) correspond aux distribution des durées en fonction des modalités de relation. On a des durées négatives.
 
 (ref:durre-modalite) Boites à moustaches des durées en fonction des modalités de relation
 

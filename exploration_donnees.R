@@ -25,12 +25,12 @@ library(plotly) # des graphiques interactifs
 ## 2 - Les données ================
 
 #celui ci est un tible
-implantation.dat <- readRDS("data/T0impl.Rds")
+implantation.dat <- readRDS("data/T0impl20191126.rds")
 class(implantation.dat)
 
 
 #celui ci est un df
-fait.dat <- readRDS("data/T0New.Rds")
+fait.dat <- readRDS("data/T0New20191126.rds")
 class(fait.dat)
 summary(fait.dat)
 unique(fait.dat$caracNew)
@@ -45,6 +45,8 @@ Encoding(implantation.dat$usual_name) <- "latin1"
 Encoding(implantation.dat$Vocable) <- "latin1"
 
 
+
+
 ## 3 - export/imporrt en csv  ================
 # j'ai du rajouter cette etape car knitr a du mal à gerer le multi encoding
 write.csv(fait.dat, "data/fait.txt")
@@ -56,6 +58,9 @@ implantation.dat <- read.csv("data/implantation.txt")
 relation.dat <- fait.dat[fait.dat$caracNew == "Relations" ,]
 dim(relation.dat)
 
+# on extrait les Déplacement 
+relation.dat <- relation.dat[!relation.dat$modaNiv1 == "Déplacement",]
+dim(relation.dat)
 
 ##.###################################################################################33
 ## II. Exploration des donnees ====
@@ -64,10 +69,11 @@ dim(relation.dat)
 ## 1 - Modalite/modAgreg ================
 
 # un peu d'exploration
-table(relation.dat$modAgreg)
+table(relation.dat$modaNiv1)
+table(relation.dat$modaNiv2)
 table(relation.dat$modalite)
 
-t(table(relation.dat$modAgreg, relation.dat$modalite))
+t(table(relation.dat$modaNiv1, relation.dat$modalite))
 
 # on regarde pour des implantation fameuse
 relation.dat[relation.dat$idimplantation == 26,]
@@ -87,14 +93,16 @@ NA_date <- relation.dat[is.na(relation.dat$date_start_min),]
 NA_date[!is.na(NA_date$date_stop_max),]
 
 # ventilation des NA dans modAgreg
-table(NA_date$modAgreg)
+table(NA_date$modaNiv1)
 
 #on regarde les lieux descendant present comme descendant par rapport au id des lieux d'ascendant
-NA_date$fklinked_implantation[NA_date$modAgreg == "D"] %in% NA_date$idimplantation[NA_date$modAgreg == "A"]
+# ici c'est incompatible avec le nouveau jeux de données modAgreg n'existe plus
+# aucune idée si c'est important ou pas 
+# NA_date$fklinked_implantation[NA_date$modAgreg == "D"] %in% NA_date$idimplantation[NA_date$modAgreg == "A"]
 
-# c'est la 76 lignes de NA_date pour modagreg == D
-rbind(NA_date[NA_date$modAgreg == "D",][76,],
-relation.dat[relation.dat$idimplantation ==2483,])
+# c'était la 76 lignes de NA_date pour modagreg == D
+#rbind(NA_date[NA_date$modAgreg == "D",][76,],
+# relation.dat[relation.dat$idimplantation ==2483,])
 
 # ou sont localise les NA
 
@@ -129,8 +137,12 @@ mapview(list(diocese.shp, implantation.shp))
 
 ## 3 date et durées  ================
 
-# j'enleve ascendant car cela doublonne
-relation_sans_A.dat <- relation.dat[relation.dat$modAgreg != "A",] 
+# j'enleve "hiérarchique asc. Ecole" et "hiérarchique ascendante"
+
+relation_sans_A.dat <- subset(relation.dat, !(relation.dat$modaNiv1 == "hiérarchique asc. Ecole" | relation.dat$modaNiv1 == "hiérarchique ascendante") )
+dim(relation_sans_A.dat)
+
+#on enlève les NA
 relation_sans_A.dat <- relation_sans_A.dat[!is.na(relation_sans_A.dat$date_startC),]
 dim(relation_sans_A.dat)
 
