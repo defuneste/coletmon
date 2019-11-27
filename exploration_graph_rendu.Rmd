@@ -41,7 +41,9 @@ implantation.dat <- subset(implantation.dat, select = - X)
 
 ```{r}
 relation.dat <- fait.dat[fait.dat$caracNew == "Relations" ,] # on ne garde que les relations
-relation <- relation.dat[relation.dat$modAgreg != "A",] # on enleve les doublons
+# on extrait les Déplacement 
+relation.dat <- relation.dat[!relation.dat$modaNiv1 == "Déplacement",]
+relation <- subset(relation.dat, !(relation.dat$modaNiv1 == "hiérarchique asc. Ecole" | relation.dat$modaNiv1 == "hiérarchique ascendante") )# on enleve les doublons
 relation <- subset(relation, select =  c("idimplantation", "usual_name", "fklinked_implantation","linked_implantation_name")) # on ne garde que les noms et noms liées
 # on drop les facteurs non pris en compte suite aux subset de relations
 relation$usual_name <- factor(relation$usual_name)
@@ -57,9 +59,9 @@ Dans un premier temps je ne vais travailler qu'avec les relations représentées
 
 ### Les relations directes
 
-Cela recouvre `r nrow(relation)` relations directes car celles avec `modAgreg == A` ont été retirées (elles doublonnaient avec `modAgreg == D`). Il y a `r length(unique(relation$idimplantation))` implantations distinctes (`idimplantation`) qui sont liées à `r length(unique(relation$fklinked_implantation))` implantations liées distinctes (`fklinked_implantation`). 
+Cela recouvre `r nrow(relation)` relations directes car celles avec `hiérarchique asc. Ecole` et  `hiérarchique ascendante` ont été retirées (elles doublonnaient). Il y a `r length(unique(relation$idimplantation))` implantations distinctes (`idimplantation`) qui sont liées à `r length(unique(relation$fklinked_implantation))` implantations liées distinctes (`fklinked_implantation`). 
 
-Le tableau \@ref(tab:relationusualname) et le diagramme en baton \@ref(fig:relationidimplantation-bar) représentent le nombre de relations que l'on a pour chaque noms d'implantations distincts (`idimplantation`). Il y a deux implantations (Charroux, Saint-Sauveur et Cluny) qui possèdent 124 et 83 relations puis on obtient un second groupe d'implantations avec un nombre de relations contenues entre 38 et 20. Ensuite les nombre d'implantations possedant de moins en moins de relations va augmenter, presque exponentiellement pour culminer au groupe d'implantations ne possedant qu'une relation (155).
+Le tableau \@ref(tab:relationusualname) et le diagramme en baton \@ref(fig:relationidimplantation-bar) représentent le nombre de relations que l'on a pour chaque noms d'implantations distincts (`idimplantation`). Il y a deux implantations (Charroux, Saint-Sauveur et Cluny) qui possèdent 164 et 102 relations puis on obtient un second groupe d'implantations avec un nombre de relations contenues entre 38 et 20. Ensuite les nombre d'implantations possedant de moins en moins de relations va augmenter, presque exponentiellement pour culminer au groupe d'implantations ne possedant qu'une relation (238).
 
 
 ```{r, relationusualname, results="asis" }
@@ -133,7 +135,7 @@ initmapview()
 
 </div>
 
-Comme le message d'erreur l'indique il y a 18 implantations dont on ne posséde par les coordonnées. 
+Comme le message d'erreur l'indique il y a 24 implantations dont on ne posséde par les coordonnées et une ligne d'erreur. 
 
 # Des graphes
 
@@ -174,15 +176,7 @@ Le premier graphe que l'on obtient comporte des liens doubles (`r nrow(relation_
 knitr::kable(table(E(graph_ensemble_simplify)$weight), col.names = c("Poids des liens", "Fréquences"), caption = "(ref:poidsrelation)")
 ```
 
-
-Plus étrange il y a une "boucle", c'est à dire une relation entre une meme implantation : 
-
-```{r}
-# on regarde à quoi elle correspond
-relation.dat[relation.dat$idimplantation == 102 & relation.dat$fklinked_implantation == 102,]
-```
-
-En tenant donc compte de cette boucle et de ces `r nrow(relation_graph[which_multiple(graph_relation),])` liens multiple on obtient `r length(E(graph_ensemble_simplify)$weight)` liens :  
+Soit :  `r nrow(relation_graph[which_multiple(graph_relation),])` liens multiple pour `r length(E(graph_ensemble_simplify)$weight)` liens. 
 
 
 <button class="btn btn-primary" data-toggle="collapse" data-target="#BlockName_tableauliensunique"> Tableau des liens uniques </button>
@@ -222,7 +216,7 @@ un.voisin <- graph.neighborhood(graph_ensemble_simplify, order = 1) # attention 
 
 
 graphjs(graph_ensemble_simplify, 
-        vertex.label = V(graph_ensemble_simplify)$usual_name, # ici on mets le nom de l'implantation
+        vertex.label = paste(V(graph_ensemble_simplify)$usual_name, V(graph_ensemble_simplify)$name) , # ici on mets le nom de l'implantation
         vertex.color = V(graph_ensemble_simplify)$colorV, # la couleur pour les vertexs
         vertex.size = log(sapply(un.voisin, vcount))/10, # la taille des noeuds = au log(voisin orde 1)/10 
                                                          # c'est pas fou mais je veux un truc de 0.1 à 0.5

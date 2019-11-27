@@ -31,8 +31,10 @@ implantation.dat <- subset(implantation.dat, select = - X)
 
 # 3 - Mise en forme =======
 
+# on extrait les Déplacement 
+relation.dat <- relation.dat[!relation.dat$modaNiv1 == "Déplacement",]
 relation.dat <- fait.dat[fait.dat$caracNew == "Relations" ,] # on ne garde que les relations
-relation <- relation.dat[relation.dat$modAgreg != "A",] # on enleve les doublons
+relation <- subset(relation.dat, !(relation.dat$modaNiv1 == "hiérarchique asc. Ecole" | relation.dat$modaNiv1 == "hiérarchique ascendante") ) # on enleve les doublons
 relation <- subset(relation, select =  c("idimplantation", "usual_name", "fklinked_implantation","linked_implantation_name")) # on ne garde que les noms et noms liées
 # on drop les facteurs non pris en compte suite aux subset de relations
 relation$usual_name <- factor(relation$usual_name)
@@ -292,7 +294,7 @@ articulation.points(graph_principal)
 ## III. Des tests de plusieurs graphs ====
 ##.#################################################################################33
 
-# c'est un peu leger, il faut regarder plus en détail ce que prenne chaque fonction
+# c'est un peu leger, il faut regarder plus en détail ce que prend chaque fonction
 
 #  1 - sous graph ================================
 
@@ -323,6 +325,8 @@ graphjs(graph_principal,
         )
         
 #  3 - exploration threejs ================================
+
+## test pour différent mode de représentation
 
 graphjs(graph_ensemble_simplify, 
          vertex.label = V(graph_ensemble_simplify)$usual_name,
