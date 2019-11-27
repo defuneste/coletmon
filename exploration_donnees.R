@@ -27,7 +27,9 @@ library(plotly) # des graphiques interactifs
 #celui ci est un tible
 implantation.dat <- readRDS("data/T0impl20191126.rds")
 class(implantation.dat)
-
+## vieille structure des données 
+# implantation.dat <- readRDS("data/T0impl.Rds")
+# names(implantation.dat)
 
 #celui ci est un df
 fait.dat <- readRDS("data/T0New20191126.rds")
@@ -43,8 +45,6 @@ Encoding(fait.dat$linked_implantation_name) <- "latin1"
 # pour implantation
 Encoding(implantation.dat$usual_name) <- "latin1"
 Encoding(implantation.dat$Vocable) <- "latin1"
-
-
 
 
 ## 3 - export/imporrt en csv  ================

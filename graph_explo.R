@@ -35,7 +35,7 @@ implantation.dat <- subset(implantation.dat, select = - X)
 relation.dat <- relation.dat[!relation.dat$modaNiv1 == "Déplacement",]
 relation.dat <- fait.dat[fait.dat$caracNew == "Relations" ,] # on ne garde que les relations
 relation <- subset(relation.dat, !(relation.dat$modaNiv1 == "hiérarchique asc. Ecole" | relation.dat$modaNiv1 == "hiérarchique ascendante") ) # on enleve les doublons
-relation <- subset(relation, select =  c("idimplantation", "usual_name", "fklinked_implantation","linked_implantation_name")) # on ne garde que les noms et noms liées
+relation <- subset(relation, select =  c("idimplantation", "usual_name", "fklinked_implantation","linked_implantation_name", "modaNiv1")) # on ne garde que les noms et noms liées
 # on drop les facteurs non pris en compte suite aux subset de relations
 relation$usual_name <- factor(relation$usual_name)
 relation$linked_implantation_name <- factor(relation$linked_implantation_name)
@@ -107,16 +107,19 @@ ggplot(implantation_relation) +
 # préparation des données
 
 # je prefere des caracteres donc autant garder une syntaxe V pour vertex
-relation_graph <- subset(relation, select = c(idimplantation, fklinked_implantation))
+relation_graph <- subset(relation, select = c(idimplantation, fklinked_implantation, modaNiv1))
+# rajout du modaNiv1 suite à update de DB du 2019/11/26
+relation_graph$modaNiv1 <- factor(relation_graph$modaNiv1)
 relation_graph$idimplantation <-  paste0("V", relation_graph$idimplantation)
 relation_graph$fklinked_implantation <- paste0("V", relation_graph$fklinked_implantation)
 
 implantation.dat$name <- paste0("V", implantation.dat$idimplantation)
 
-# on garde pas tout, il est important que le première colonne contienne les noms de vertex cf help(grap.data.frame)
-implantationVertex.dat <- implantation.dat[,c(16,2,3,9:11)] 
+# on garde pas tout, il est important que la première colonne contienne les noms de vertex cf. help(grap.data.frame)
+implantationVertex.dat <- subset(implantation.dat, select = c(name, usual_name, date_startC_Fact ,  date_stopC_Fact ,  DureeSFact) )
 length(unique(implantationVertex.dat$name))
 
+names(implantation.dat)
 names(implantationVertex.dat)
 
 # le match est un peu tricky ici car utilisé pour réduire et ordonner
@@ -125,9 +128,13 @@ implantationVertexv2.dat <- implantationVertex.dat[match(unique(c(relation_graph
 head(implantationVertexv2.dat)
 dim(implantationVertexv2.dat)
 
+
+
 graph_relation <- graph.data.frame(relation_graph, 
                                    directed = FALSE, 
                                    vertices = implantationVertexv2.dat)
+
+ 
 
 is_simple(graph_relation) # on a plusieurs liens pour un meme couple de noeud
 
@@ -149,7 +156,7 @@ relation.dat[relation.dat$idimplantation == 102 & relation.dat$fklinked_implanta
 # on simplifie le graph # en ajoutant un poids pour le nombre de relation
 E(graph_relation)$weight <- 1
 # on fait le nouveau graph avec le poids 
-graph_ensemble_simplify <- simplify(graph_relation, edge.attr.comb = "sum") 
+graph_ensemble_simplify <- simplify(graph_relation, edge.attr.comb = list(weight="sum", "ignore")) 
 
 length(E(graph_ensemble_simplify)$weight)
 
@@ -175,14 +182,38 @@ table(E(graph_ensemble_simplify)$weight)
 E(graph_ensemble_simplify)$colorW <- ifelse(E(graph_ensemble_simplify)$weight == 1, "forestgreen",
                                             ifelse(E(graph_ensemble_simplify)$weight == 2, "orange", "red"))
 
-# #palette de couleur
-# edge_pal <- colorRampPalette(c( "forestgreen", "blue"))
-# # un vecteur de couleur pour les edges
-# E(graph_ensemble_simplify)$colorW <- edge_pal(10)[as.numeric(cut( # on cut le log des valeurs de poids et on passe en num pour indexer
-#                                                                   # la palette
-#                                       log(E(graph_ensemble_simplify)$weight + 1 )
-#                                       ,breaks = 10))]
 
+# un vecteur de couleur pour les vertexes
+V(graph_ensemble_simplify)$colorV <- "gray60"
+
+graphjs(graph_ensemble_simplify, 
+        vertex.label = paste(V(graph_ensemble_simplify)$usual_name, V(graph_ensemble_simplify)$name),
+        vertex.color = V(graph_ensemble_simplify)$colorV,
+        vertex.size = log(sapply(un.voisin, vcount))/10,
+        edge.color = E(graph_ensemble_simplify)$colorW)
+
+#  3b - premiers graphs par type ================================
+## si on veut faire des graph par relation / faire une liste des processus 
+
+unique(relation_graph$modaNiv1)
+
+modaNiv
+
+relation_graph_modaNiv1 <- relation_graph[relation_graph$modaNiv1 == "hiérarchique descendante", ]
+
+graph_relation <- graph.data.frame(relation_graph_modaNiv1, 
+                                   directed = FALSE, 
+                                   vertices = implantationVertexv2.dat)
+
+graph_ensemble_simplify <- simplify(graph_relation, edge.attr.comb = list(weight="sum", "ignore")) 
+
+
+
+# un vecteur de couleur pour les edges
+E(graph_ensemble_simplify)$colorW <- ifelse(E(graph_ensemble_simplify)$weight == 1, "forestgreen",
+                                            ifelse(E(graph_ensemble_simplify)$weight == 2, "orange", "red"))
+
+un.voisin <- graph.neighborhood(graph_ensemble_simplify, order = 1) # attention la fonction evolue vers ego_size
 
 # un vecteur de couleur pour les vertexes
 V(graph_ensemble_simplify)$colorV <- "gray60"

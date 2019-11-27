@@ -197,6 +197,8 @@ DT::datatable(lien_unique_join.dat)
 
 </div>
 
+
+
 Le nombre de liens que posède un noeud correspond au degré. 
 
 ## Une première visualisation. 
