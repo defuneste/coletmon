@@ -31,9 +31,9 @@ implantation.dat <- subset(implantation.dat, select = - X)
 
 # 3 - Mise en forme =======
 
-# on extrait les Déplacement 
-relation.dat <- relation.dat[!relation.dat$modaNiv1 == "Déplacement",]
 relation.dat <- fait.dat[fait.dat$caracNew == "Relations" ,] # on ne garde que les relations
+# on extrait les Déplacement 
+relation.dat <- relation.dat[relation.dat$modaNiv1 != "Déplacement",]
 relation <- subset(relation.dat, !(relation.dat$modaNiv1 == "hiérarchique asc. Ecole" | relation.dat$modaNiv1 == "hiérarchique ascendante") ) # on enleve les doublons
 relation <- subset(relation, select =  c("idimplantation", "usual_name", "fklinked_implantation","linked_implantation_name", "modaNiv1")) # on ne garde que les noms et noms liées
 # on drop les facteurs non pris en compte suite aux subset de relations
@@ -155,8 +155,10 @@ relation.dat[relation.dat$idimplantation == 102 & relation.dat$fklinked_implanta
 
 # on simplifie le graph # en ajoutant un poids pour le nombre de relation
 E(graph_relation)$weight <- 1
-# on fait le nouveau graph avec le poids 
-graph_ensemble_simplify <- simplify(graph_relation, edge.attr.comb = list(weight="sum", "ignore")) 
+
+# on fait le nouveau graph avec le poids, poids et summer et modaNiv1 est concat 
+graph_ensemble_simplify <- simplify(graph_relation, 
+                                    edge.attr.comb = list(weight="sum", modaNiv1 = "concat")) 
 
 length(E(graph_ensemble_simplify)$weight)
 
@@ -178,6 +180,8 @@ plot(graph_ensemble_simplify, vertex.label = NA, edge.label = NA,
 
 table(E(graph_ensemble_simplify)$weight)
 
+un.voisin <- graph.neighborhood(graph_ensemble_simplify, order = 1) # attention la fonction evolue vers ego_size
+
 # un vecteur de couleur pour les edges
 E(graph_ensemble_simplify)$colorW <- ifelse(E(graph_ensemble_simplify)$weight == 1, "forestgreen",
                                             ifelse(E(graph_ensemble_simplify)$weight == 2, "orange", "red"))
@@ -190,14 +194,13 @@ graphjs(graph_ensemble_simplify,
         vertex.label = paste(V(graph_ensemble_simplify)$usual_name, V(graph_ensemble_simplify)$name),
         vertex.color = V(graph_ensemble_simplify)$colorV,
         vertex.size = log(sapply(un.voisin, vcount))/10,
-        edge.color = E(graph_ensemble_simplify)$colorW)
+        edge.color = E(graph_ensemble_simplify)$colorw)
 
 #  3b - premiers graphs par type ================================
 ## si on veut faire des graph par relation / faire une liste des processus 
 
 unique(relation_graph$modaNiv1)
-
-modaNiv
+table(relation_graph$modaNiv1)
 
 relation_graph_modaNiv1 <- relation_graph[relation_graph$modaNiv1 == "hiérarchique descendante", ]
 
@@ -205,15 +208,38 @@ graph_relation <- graph.data.frame(relation_graph_modaNiv1,
                                    directed = FALSE, 
                                    vertices = implantationVertexv2.dat)
 
-graph_ensemble_simplify <- simplify(graph_relation, edge.attr.comb = list(weight="sum", "ignore")) 
+E(graph_relation)$weight <- 1
+
+graph_modaNiv1_simplify <- simplify(graph_relation, edge.attr.comb = list(weight="sum", "ignore")) 
+
+E(graph_modaNiv1_simplify)$weight
+
+# un vecteur de couleur pour les edges
+E(graph_modaNiv1_simplify)$colorW <- ifelse(E(graph_modaNiv1_simplify)$weight == 1, "forestgreen",
+                                            ifelse(E(graph_modaNiv1_simplify)$weight == 2, "orange", "red"))
+
+un.voisin <- graph.neighborhood(graph_modaNiv1_simplify, order = 1) # attention la fonction evolue vers ego_size
+
+# un vecteur de couleur pour les vertexes
+V(graph_modaNiv1_simplify)$colorV <- "gray60"
+
+graphjs(graph_modaNiv1_simplify, 
+        vertex.label = paste(V(graph_modaNiv1_simplify)$usual_name, V(graph_modaNiv1_simplify)$name),
+        vertex.color = V(graph_modaNiv1_simplify)$colorV,
+        vertex.size = log(sapply(un.voisin, vcount))/10,
+        edge.color = E(graph_modaNiv1_simplify)$colorW)
+
+## je suis pas fan car c'est la meme chose je le garde au cas ou
 
 
+table(sapply(E(graph_ensemble_simplify)$modaNiv1, '[['))
+
+un.voisin <- graph.neighborhood(graph_ensemble_simplify, order = 1) # attention la fonction evolue vers ego_size
 
 # un vecteur de couleur pour les edges
 E(graph_ensemble_simplify)$colorW <- ifelse(E(graph_ensemble_simplify)$weight == 1, "forestgreen",
                                             ifelse(E(graph_ensemble_simplify)$weight == 2, "orange", "red"))
 
-un.voisin <- graph.neighborhood(graph_ensemble_simplify, order = 1) # attention la fonction evolue vers ego_size
 
 # un vecteur de couleur pour les vertexes
 V(graph_ensemble_simplify)$colorV <- "gray60"
@@ -222,7 +248,8 @@ graphjs(graph_ensemble_simplify,
         vertex.label = paste(V(graph_ensemble_simplify)$usual_name, V(graph_ensemble_simplify)$name),
         vertex.color = V(graph_ensemble_simplify)$colorV,
         vertex.size = log(sapply(un.voisin, vcount))/10,
-        edge.color = E(graph_ensemble_simplify)$colorW)
+        edge.color = E(graph_ensemble_simplify)$colorw)
+
 
 #  4 - degrés et degrés des voisins ================================
 
@@ -307,10 +334,11 @@ graphjs(induced_subgraph(graph_ensemble_simplify, vids = V(graph_ensemble_simpli
 
 class(comps)
 
-table(sapply(comps, vcount))
-table(sapply(comps, ecount))
+comp_connexe <- data.frame(table(sapply(comps, vcount)),
+table(sapply(comps, ecount)))
+names(comp_connexe) <- c("nbr de noeud", "nbr de comp. connexe", "nbr de liens", "nbr de comp. connexe")
 
-# un graph sur le gros groupe, attention decompose graph retoune une liste
+# un graph sur le gros groupe, attention decompose graph retoune une liste 
 graph_principal <- decompose.graph(graph_ensemble_simplify, min.vertices = 599)[[1]]
 
 vertex.connectivity(graph_principal)

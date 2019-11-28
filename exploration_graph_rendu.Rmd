@@ -44,10 +44,11 @@ relation.dat <- fait.dat[fait.dat$caracNew == "Relations" ,] # on ne garde que l
 # on extrait les Déplacement 
 relation.dat <- relation.dat[!relation.dat$modaNiv1 == "Déplacement",]
 relation <- subset(relation.dat, !(relation.dat$modaNiv1 == "hiérarchique asc. Ecole" | relation.dat$modaNiv1 == "hiérarchique ascendante") )# on enleve les doublons
-relation <- subset(relation, select =  c("idimplantation", "usual_name", "fklinked_implantation","linked_implantation_name")) # on ne garde que les noms et noms liées
+relation <- subset(relation, select =  c("idimplantation", "usual_name", "fklinked_implantation","linked_implantation_name", "modaNiv1")) # on ne garde que les noms et noms liées
 # on drop les facteurs non pris en compte suite aux subset de relations
 relation$usual_name <- factor(relation$usual_name)
 relation$linked_implantation_name <- factor(relation$linked_implantation_name)
+relation$modaNiv1 <- factor(relation$modaNiv1)
 ```
 
 
@@ -144,7 +145,7 @@ Comme le message d'erreur l'indique il y a 24 implantations dont on ne posséde 
 ```{r, préparation-des-données}
  
 # je prefere des caracteres donc autant garder une syntaxe V pour vertex
-relation_graph <- subset(relation, select = c(idimplantation, fklinked_implantation))
+relation_graph <- subset(relation, select = c(idimplantation, fklinked_implantation, modaNiv1))
 relation_graph$idimplantation <-  paste0("V", relation_graph$idimplantation)
 relation_graph$fklinked_implantation <- paste0("V", relation_graph$fklinked_implantation)
 
@@ -163,7 +164,7 @@ graph_relation <- graph.data.frame(relation_graph,
 
 E(graph_relation)$weight <- 1
 # on fait le nouveau graph avec le poids 
-graph_ensemble_simplify <- simplify(graph_relation, edge.attr.comb = "sum") 
+graph_ensemble_simplify <- simplify(graph_relation, edge.attr.comb = list(weight="sum", "ignore")) 
 
 ```
 
@@ -226,4 +227,53 @@ graphjs(graph_ensemble_simplify,
         brush=TRUE) 
 ```
 
+
+Un reseau minimum doit comporter un lien et deux noeuds. Avec trois noeuds, il faut trois liens. Dès quatre noeuds cela se complique fortement, seulement trois liens sont necessaires mais 6 sont possibles. Cependant le triangle est le nombre maximum pour les cliques que l'on obtient dans notre cas : 
+
+```{r}
+knitr::kable(table(sapply(cliques(graph_ensemble_simplify), length)))
+```
+
+
+Le tableau ci dessous présente le nombre de composantes connexes pour le réseau \@ref(fig:graphsimplify). On en obtient 243. (ce tableau est une petite truanderie qui marche vu la faible densité de notre réseau)
+
+```{r}
+comps <- decompose.graph(graph_ensemble_simplify)
+comp_connexe <- data.frame(table(sapply(comps, vcount)),
+table(sapply(comps, ecount)))
+names(comp_connexe) <- c("nbr de noeud", "nbr de comp. connexe", "nbr de liens", "nbr de comp. connexe")
+DT::datatable(comp_connexe)
+```
+
+Une très grande majorité des relations sont des "hiérarchique descendante" pour rappel : 
+
+```{r}
+knitr::kable(table(relation_graph$modaNiv1))
+```
+
+Du coup pour le moment je pense que cela fait plus sens de changer la couleur par type de modaNiv1, Pour aller vite j'ai pris la première modalité dans le jeux de données, une meme modalité se répetant mais pas toujours, il faudra affiner.  
+
+"hiérarchique descendante" est  "forestgreen", "hiérarchique desc. Ecole" est en "yellow" et  Relation horizontale est en "rouge"
+
+
+```{r}
+# cést le first ici "concat"
+graph_ensemble_simplify <- simplify(graph_relation, edge.attr.comb = list(weight="sum", modaNiv1 = "first")) 
+
+un.voisin <- graph.neighborhood(graph_ensemble_simplify, order = 1) # attention la fonction evolue vers ego_size
+
+# un vecteur de couleur pour les edges
+E(graph_ensemble_simplify)$colorW <- ifelse(E(graph_ensemble_simplify)$modaNiv1 == "hiérarchique descendante", "forestgreen",
+                                            ifelse(E(graph_ensemble_simplify)$modaNiv1 ==  "hiérarchique desc. Ecole", "yellow", "red"))
+
+
+# un vecteur de couleur pour les vertexes
+V(graph_ensemble_simplify)$colorV <- "gray60"
+
+graphjs(graph_ensemble_simplify, 
+        vertex.label = paste(V(graph_ensemble_simplify)$usual_name, V(graph_ensemble_simplify)$name),
+        vertex.color = V(graph_ensemble_simplify)$colorV,
+        vertex.size = log(sapply(un.voisin, vcount))/10,
+        edge.color = E(graph_ensemble_simplify)$colorW)
+```
 
