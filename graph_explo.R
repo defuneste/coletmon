@@ -10,9 +10,6 @@
 ## I. Chargement des données de col&mon ====
 ##.#################################################################################33
 
-
-# 1 - chargement des librairies =======
-
 library(tidyr)
 library(dplyr) # manip données
 library(ggplot2) #  graphiques
@@ -22,35 +19,15 @@ library(igraph) # graph
 library(threejs) # APi de js pour les graphs
 library(colortools) # couleur
 
-# 2 - Imports des données =======
+#chargement des données
 
-fait.dat <- read.csv("data/fait.txt")
-implantation.dat <- read.csv("data/implantation.txt")
-fait.dat <- subset(fait.dat, select = - X)
-implantation.dat <- subset(implantation.dat, select = - X)
-
-# 3 - Mise en forme =======
-
-relation.dat <- fait.dat[fait.dat$caracNew == "Relations" ,] # on ne garde que les relations
-# on extrait les Déplacement 
-relation.dat <- relation.dat[relation.dat$modaNiv1 != "Déplacement",]
-relation <- subset(relation.dat, !(relation.dat$modaNiv1 == "hiérarchique asc. Ecole" | relation.dat$modaNiv1 == "hiérarchique ascendante") ) # on enleve les doublons
-relation <- subset(relation, select =  c("idimplantation", "usual_name", "fklinked_implantation","linked_implantation_name", "modaNiv1")) # on ne garde que les noms et noms liées
-# on drop les facteurs non pris en compte suite aux subset de relations
-relation$usual_name <- factor(relation$usual_name)
-relation$linked_implantation_name <- factor(relation$linked_implantation_name)
-
-# fonction de verif
-verif_relation <- function(num_relation) {
-    relation.dat[relation.dat$idimplantation == num_relation,]}
+source("chargement_graphs.R")
 
 ##.###################################################################################33
 ## II. Graphs ====
 ##.#################################################################################33
 
 ## 0 - Vertex/hedge ================
-# éviter les croissement de liens
-# éviter les superposition de noeud
 # faire les liens le plus uniforme
 # augmenter la symétrie du réseau le plus possible
 # mettre les noeuds les plus influents au centre
@@ -58,10 +35,6 @@ verif_relation <- function(num_relation) {
 # ex : circle, tree, etc
 # ex : plot(g1, vertex.label.color = "black", layout = layout_in_circle(g1))
 # on peut aussi sauver le layout dans un objet : 
-# m <- layout_as_tree(g1)
-# plot(g1, vertex.label.color = "black", layout = m)
-# delete_edges() which takes two arguments.
-# The first is the graph object and the second is the subset of edges to be removed
 # dans notre cas on a une direction : DN network 
 # donc les degree sont outdegree et in degree
 # lien entre deux : g["X", "Y"] vu que cela est une sorte de matrice
@@ -199,7 +172,6 @@ graphjs(graph_ensemble_simplify,
 #  3b - premiers graphs par type ================================
 ## si on veut faire des graph par relation / faire une liste des processus 
 
-unique(relation_graph$modaNiv1)
 table(relation_graph$modaNiv1)
 
 relation_graph_modaNiv1 <- relation_graph[relation_graph$modaNiv1 == "hiérarchique descendante", ]

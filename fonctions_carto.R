@@ -86,6 +86,17 @@ mapImplVite <- function(ImpSel.shp, Vcolor)
 }
 
 
+# 3. fonctions d'expliorations des données ====
+
+# fonction de verif
+# elle demande d'avoir un objet relation.dat correspondant à un subset de T0NewsXX.rds
+# la fonction prends juste l'idimplantation
+# c'est surtout utils pour faire de la verification
+
+verif_relation <- function(num_relation) {
+    relation.dat[relation.dat$idimplantation == num_relation,]}
+
+print("verif_relation prend une idimplantatiom et retourne un subset dans relation.dat pour cet idimplantation")
 
 
 
