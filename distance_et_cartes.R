@@ -13,77 +13,7 @@ library(ggplot2)
 library(plotly)
 library(purrr)
 
-fait.dat <- read.csv("data/fait.txt")
-implantation.dat <- read.csv("data/implantation.txt")
-# les relations sont un sous ensemble des faits
-relation.dat <- fait.dat[fait.dat$caracNew == "Relations" ,]
-dim(relation.dat)
-
-relation.dat <- relation.dat[relation.dat$modAgreg != "A", ] # on enlève A pour n' avoir que D
-relation.dat <- relation.dat[relation.dat$modAgreg != "X", ] # on enlève X
-dim(relation.dat)
-
-
-# 1.  On construit un nouveau tableau qui contient les lat/long de chaque cote de la relation ===========================
-# l'objectif est de dessiner les liens sur une carte : de A -> B
-# Hélène indique que les lat/long dans relations.dat sont celles de l'implantation (idimplantation) 
-# et pas celle lièe (fklinked_implantation) 
-
-Relation_renomer <- dplyr::rename(relation.dat,                                 # rename est pas mal utilisé donc on precise la library
-                                  idimpl_link=fklinked_implantation,            # ici on prend l'id lié
-                                  usual_name_link=linked_implantation_name) %>% # idem pour le nom lié
-    dplyr::select(-X)                                           # on pipe pour verifier X que j' avais fait lors mon export
-
-# je vais decouper un peu le pipe d'Hélène avec une table produite pour la jointure 
-# qui va comporter les lat/long des implantations liées
-
-implantation_renomer <- implantation.dat %>% 
-    dplyr::select(idimpl_link = idimplantation, # selon la doc on peut directement renomer dans un select
-                  lat_link = lat, 
-                  lng_link = lng, 
-                  Dioc_link = Diocese) 
-
-# on fait la jointure 
-
-relation_total.dat <- dplyr::left_join(Relation_renomer, implantation_renomer, by = "idimpl_link")
-
-summary(relation_total.dat)
-# il y a des valeurs manquantes dans les lat/long de A (26) et B (46)
-
-relation_total.dat <- dplyr::filter(relation_total.dat, !is.na(lat) & !is.na(lat_link)) # on retire les NA, c'est 60 relations
-
-# 2.  On passe en sf =============================
-# je m'inspire de cette solution : 
-# https://stackoverflow.com/questions/58723988/create-numerous-lines-in-simple-features-from-list-of-coordinates-in-r
-
-# matrice de départ
-from.dat  <- relation_total.dat %>% 
-    select(lng, lat) %>% 
-    as.matrix()
-
-#matrice d'arrivé
-to.dat <- relation_total.dat %>% 
-    select(lng_link, lat_link) %>% 
-    as.matrix()
-
-
-relation_total.dat$geometry <- do.call(st_sfc,                                                             # on fait une fonction sfc
-                                       lapply(                                                             # on fait un apply sur chaque lignes
-                                           1:nrow(relation_total.dat),
-                                           function(i){                              
-                                               st_linestring(                                              # qui va tracer des lignes
-                                                   matrix(                                                 # en prenant les points dans une matrics
-                                                       c(from.dat[i,], to.dat[i,]), ncol=2,byrow=TRUE)     # composé du couple de point de départ et arrivé
-                                               )  }     )  )
-
-relation_total.shp <- st_as_sf(relation_total.dat, sf_column_name = "geometry", crs = 4326) %>% 
-    st_transform(2154)
-
-# 2.  On calcul la distance ============================= 
-
-relation_total.shp$distance_km <- round(                                    # on va arrondir le résultats à 2 chiffres
-                            as.numeric(                                     # je drop units 
-                                st_length(relation_total.shp)/1000), 2)     # on mesure la distance sur la geometry 
+ # on mesure la distance sur la geometry 
 
 # un ggplot rapide pour regarder
 ggplot(relation_total.shp, aes(modalite, distance_km, color = modalite)) +
@@ -198,10 +128,15 @@ geo_relation <- plot_geo() %>%
 
 hist_relation <- plot_ly(shared_interval, x = ~interval_sup) %>% add_histogram()
 
-
 subplot(hist_relation, geo_relation) %>% 
     highlight(on = "plotly_click")
 
+
+
+
+
+
+####################################################################################################################
 #############♣ Export pour QGIS
 Tliensres1<-rename(Tliensres1,idimplantation=idimpl_link,
                    usual_name=usual_name_link)
@@ -217,7 +152,6 @@ st_write(TliensFin, "testLiens/LiensFin", driver="ESRI Shapefile")
 
 write.csv(TliensX, file="testLiens/RelationsLiens.csv",na="",row.names = FALSE)
 
-###########
 #################test carto  avec une implantation
 centreid<-5   #"Auxerre"
 centreid<-1100   #"Abbaye de Charroux"
