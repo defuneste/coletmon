@@ -15,12 +15,14 @@ library(purrr)
 
  # on mesure la distance sur la geometry 
 
+source("chargement_graphs.R")
+
 # un ggplot rapide pour regarder
-ggplot(relation_total.shp, aes(modalite, distance_km, color = modalite)) +
+ggplot(relation_total.shp, aes(modaNiv1, distance_km, color = modaNiv1)) +
                                             geom_boxplot()
 
 # on enleve les facteurs inutilisés dans modalite
-relation_total.shp$modalite <- factor(relation_total.shp$modalite)
+relation_total.shp$modalite <- factor(relation_total.shp$modaNiv1)
 
 # un plotly
 f <- list(
@@ -35,7 +37,7 @@ y <- list(
 )
 
 # j'ai dropé la geometry car j'ai l'impression que cela me doublais dans ce cas les lignes
-plot_ly(st_drop_geometry(relation_total.shp), y = ~ distance_km, color = ~ modalite, type = "box", 
+plot_ly(st_drop_geometry(relation_total.shp), y = ~ distance_km, color = ~ modaNiv1, type = "box", 
         # ici on affaiche les valeur et on rajoute le nom/id des implantations dans les deux sens
         text = ~paste(paste(relation_total.shp$usual_name, relation_total.shp$idimplantation), 
                       paste(relation_total.shp$usual_name_link, relation_total.shp$idimpl_link), sep = "\n")) %>% 
@@ -43,7 +45,7 @@ plot_ly(st_drop_geometry(relation_total.shp), y = ~ distance_km, color = ~ modal
 
 
 library(mapview)
-mapview(relation_total.shp, zcol ="modAgreg",burst=TRUE)
+mapview(st_transform(relation_total.shp, 4326), zcol ="modaNiv1",burst=TRUE)
 
 ##.###################################################################################33
 ## II. des evolutions au cours du temps ====
@@ -57,7 +59,7 @@ names(relation_total.shp)
 relation_slim <- relation_total.shp %>%  # on va faire un jeux de données plus léger
     st_drop_geometry() %>%  # on drop la geometry
     # on ne garde que ce qui est utile
-    select(c(idimplantation, usual_name,modAgreg,modalite,idimpl_link,usual_name_link,lat,lng,date_startC,date_stopC,DureeFact,lat_link, lng_link ))  
+    select(c(idimplantation, usual_name, modaNiv1, modalite,idimpl_link,usual_name_link,lat,lng,date_startC,date_stopC,DureeFact,lat_link, lng_link ))  
     # on impute les NA avec la valeur mins
     #mutate(date_startC = ifelse(is.na(relation_total.shp$date_startC), min(relation_total.shp$date_startC, na.rm = T), relation_total.shp$date_startC))
 

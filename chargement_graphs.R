@@ -25,7 +25,7 @@ relation.dat <- fait.dat[fait.dat$caracNew == "Relations" ,] # Extractions des r
 # Extraction des Déplacement 
 relation.dat <- relation.dat[relation.dat$modaNiv1 != "Déplacement",]
 relation <- subset(relation.dat, !(relation.dat$modaNiv1 == "hiérarchique asc. Ecole" | relation.dat$modaNiv1 == "hiérarchique ascendante") ) # on enleve les doublons
-relation <- subset(relation, select =  c("idimplantation", "usual_name", "fklinked_implantation","linked_implantation_name", "modaNiv1")) # on ne garde que les noms et noms liées
+relation <- subset(relation, select =  c("idimplantation", "usual_name", "fklinked_implantation","linked_implantation_name", "modaNiv1", "lat", "lng")) # on ne garde que les noms et noms liées
 # Drop des facteurs non pris en compte suite aux subset de relations
 relation$usual_name <- factor(relation$usual_name)
 relation$linked_implantation_name <- factor(relation$linked_implantation_name)
@@ -37,7 +37,7 @@ relation$modaNiv1 <- factor(relation$modaNiv1)
 # Hélène indique que les lat/long dans relations.dat sont celles de l'implantation (idimplantation) et pas celle lièe (fklinked_implantation).
 # on va donc renomer les lat/lomg des implantations et le noms des implantations puis les joindre pour constituer un tableau avec les coords de A et de B.  
 
-Relation_renomer <- dplyr::rename(relation.dat,                                 # rename est pas mal utilisé donc on precise la library, il y a une dépendance sur dplyr
+Relation_renomer <- dplyr::rename(relation,                                 # rename est pas mal utilisé donc on precise la library, il y a une dépendance sur dplyr
                                   idimpl_link=fklinked_implantation,            # ici on prend l'id lié
                                   usual_name_link=linked_implantation_name)     # idem pour le nom lié
   
