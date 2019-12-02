@@ -1,0 +1,44 @@
+---
+title: "Interface réseau"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+
+```
+
+
+Inputs {data-width=200, .sidebar}
+-------------------------------------
+
+Column {data-width=400}
+-----------------------------------------------------------------------
+
+
+### Temps
+
+```{r}
+
+```
+
+
+### Espace géo 2D
+
+```{r}
+
+```
+
+Column {data-width=400}
+-----------------------------------------------------------------------
+
+### Espace réseau 3D
+
+```{r}
+
+```
+

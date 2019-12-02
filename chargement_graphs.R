@@ -51,10 +51,9 @@ implantation_renomer <-  dplyr::select(implantation.dat, idimpl_link = idimplant
 # Jointure via idimpl_link
 relation_total.dat <- dplyr::left_join(Relation_renomer, implantation_renomer, by = "idimpl_link")
 
-# on supprime les fichiers intermediaires
+# Suppression des fichiers intermediaires
 rm(Relation_renomer, implantation_renomer)
 
-summary(relation_total.dat)
 # il y a des valeurs manquantes dans les lat/long de A (106) et B (107)
 relation_total.dat <- dplyr::filter(relation_total.dat, !is.na(lat) & !is.na(lat_link)) # on retire les NA, c'est 60 relations
 
