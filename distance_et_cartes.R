@@ -12,6 +12,7 @@ library(sf)
 library(ggplot2)
 library(plotly)
 library(purrr)
+library(leaflet)
 
  # on mesure la distance sur la geometry 
 
@@ -45,7 +46,7 @@ plot_ly(st_drop_geometry(relation_total.shp), y = ~ distance_km, color = ~ modaN
 
 
 library(mapview)
-mapview(st_transform(relation_total.shp, 4326), zcol ="modaNiv1",burst=TRUE)
+mapview(st_transform(relation_total.shp, 4326), zcol ="modaNiv1", burst=TRUE)
 
 ##.###################################################################################33
 ## II. des evolutions au cours du temps ====
@@ -57,9 +58,9 @@ names(relation_total.shp)
 # on dessine une frame par periode et il faut donc que l' ensemble des liens present à ce moment soient présent dans 
 # le jeux de données 
 relation_slim <- relation_total.shp %>%  # on va faire un jeux de données plus léger
-    st_drop_geometry() %>%  # on drop la geometry
+    st_drop_geometry()   # on drop la geometry
     # on ne garde que ce qui est utile
-    select(c(idimplantation, usual_name, modaNiv1, modalite,idimpl_link,usual_name_link,lat,lng,date_startC,date_stopC,DureeFact,lat_link, lng_link ))  
+    # select(c(idimplantation, usual_name, modaNiv1, idimpl_link, usual_name_link, lat, lng,date_startC, date_stopC, lat_link, lng_link ))  
     # on impute les NA avec la valeur mins
     #mutate(date_startC = ifelse(is.na(relation_total.shp$date_startC), min(relation_total.shp$date_startC, na.rm = T), relation_total.shp$date_startC))
 
@@ -67,12 +68,16 @@ relation_slim <- relation_slim[!is.na(relation_slim$date_startC),]
 
 interval_sup <-  seq(375,1825,50)
 
+#duplication par pas de temps
 relation_slim_intervall_all <- merge(relation_slim, interval_sup ,all = TRUE)
 
+# un nom plus cool 
 names(relation_slim_intervall_all)[names(relation_slim_intervall_all) == "y"] <-  "interval_inf"
 
+# interval_sup
 relation_slim_intervall_all$interval_sup <- relation_slim_intervall_all$interval_inf + 50
 
+# un filtre pour avoir sur le bon pas de temps
 test_interval <-  relation_slim_intervall_all[relation_slim_intervall_all$interval_sup > relation_slim_intervall_all$date_startC ,]
 test_interval2 <- test_interval[test_interval$interval_inf <= test_interval$date_stopC,]
 
@@ -97,7 +102,7 @@ plot_geo() %>%
         x = ~lng, xend = ~lng_link,
         y = ~lat, yend = ~lat_link,
         alpha = 0.5, size = I(1.5), hoverinfo = "none", 
-        frame = ~interval_inf, color = ~modalite
+        frame = ~interval_inf, color = ~modaNiv1
     ) %>%
     layout(
         title = 'test',
@@ -110,7 +115,7 @@ plot_geo() %>%
 
 library(crosstalk)
 
-shared_interval <- SharedData$new(test_interval2, key = ~interval_sup)
+shared_interval <- SharedData$new(test_interval2)
 
 geo_relation <- plot_geo() %>%
     add_markers(
@@ -121,7 +126,7 @@ geo_relation <- plot_geo() %>%
         data = shared_interval,
         x = ~lng, xend = ~lng_link,
         y = ~lat, yend = ~lat_link,
-        alpha = 0.5, size = I(1.5), hoverinfo = "none", color = ~modalite
+        alpha = 0.5, size = I(1.5), hoverinfo = "none", color = ~modaNiv1
     ) %>%
     layout(
         title = 'test',
@@ -129,30 +134,24 @@ geo_relation <- plot_geo() %>%
     )
 
 hist_relation <- plot_ly(shared_interval, x = ~interval_sup) %>% add_histogram()
+temps_distance <- plot_ly(shared_interval, x = ~interval_sup, y = ~ distance_km) %>% add_markers()
+
+
+
+bob <- filter_slider("dist", "Distance", shared_interval, column=~distance_km, step=50, width=250)
 
 subplot(hist_relation, geo_relation) %>% 
     highlight(on = "plotly_click")
 
+###### leaflet solution 
 
 
+jim <- leaflet() %>% 
+    addTiles() %>%
+    addProviderTiles(providers$CartoDB.Positron) %>% 
+    addPolylines(data = shared_interval, lng = ~lng, lat = ~lat)
 
-
-
-####################################################################################################################
-#############♣ Export pour QGIS
-Tliensres1<-rename(Tliensres1,idimplantation=idimpl_link,
-                   usual_name=usual_name_link)
-write.csv(Tliensres1, file="testLiens/RelationsDistances.csv",na="",row.names = FALSE)
-write.csv(ImplNew, file="testLiens/ImplNew.csv",na="",row.names = FALSE)
-
-Temp <- filter(ImplNew,!is.na(lat)) %>% 
-    st_as_sf(coords = c("lng", "lat"), crs = 4326) %>% 
-    st_transform(2154) 
-
-st_write(Temp, "testLiens/ImplXY", driver="ESRI Shapefile")
-st_write(TliensFin, "testLiens/LiensFin", driver="ESRI Shapefile")
-
-write.csv(TliensX, file="testLiens/RelationsLiens.csv",na="",row.names = FALSE)
+bscols(bob, temps_distance) 
 
 #################test carto  avec une implantation
 centreid<-5   #"Auxerre"
@@ -188,31 +187,3 @@ m<-mapImplVite(TCartoLiens,"modalite")
 m
 mapshot(m, url = paste0(getwd(), "/AbbayeCharroux.html"))
 
-
-
-
-############GGplot2 des liens mais problème de couleur
-TCartoLiens<- st_as_sf(TCartoLiens,coords = c("lng", "lat"), crs = 4326) %>% 
-    st_transform(2154)
-ggplot() + 
-    geom_sf(data = DioFond)+
-    geom_sf(data = TCartoLiens, aes(colour=modalite,fill=modalite),cex=3)+
-    scale_fill_manual(values = cols)+
-    scale_colour_manual(values = cols)+
-    geom_sf(data = filter(TCartoLiens,idimplantation==centreid), aes(colour = modalite, fill = modalite)) +
-    coord_sf()+
-    scale_fill_manual(values = cols)+
-    scale_colour_manual(values = cols)
-
-#Carto de tout les liens
-ggplot() +
-    geom_sf(data = DioFond)+
-    geom_sf(data = TCartoLiens, 
-            aes(colour = modalite, fill = modalite),size=1) +
-    coord_sf()+
-    scale_fill_manual(values = cols)+
-    scale_colour_manual(values = cols)
-
-
-# scale_colour_brewer(palette = "Set1")+
-# scale_fill_brewer(palette = "Set1")
