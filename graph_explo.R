@@ -89,7 +89,8 @@ relation_graph$fklinked_implantation <- paste0("V", relation_graph$fklinked_impl
 implantation.dat$name <- paste0("V", implantation.dat$idimplantation)
 
 # on garde pas tout, il est important que la première colonne contienne les noms de vertex cf. help(grap.data.frame)
-implantationVertex.dat <- subset(implantation.dat, select = c(name, usual_name, date_startC_Fact ,  date_stopC_Fact ,  DureeSFact) )
+implantation.dat <- implantation.dat[!is.na(implantation.dat$lat)]
+implantationVertex.dat <- subset(implantation.dat, select = c(name, usual_name, date_startC_Fact ,  date_stopC_Fact ,  DureeSFact, lat, lng) )
 length(unique(implantationVertex.dat$name))
 
 names(implantation.dat)
@@ -155,10 +156,14 @@ table(E(graph_ensemble_simplify)$weight)
 
 un.voisin <- graph.neighborhood(graph_ensemble_simplify, order = 1) # attention la fonction evolue vers ego_size
 
+degree(graph_ensemble_simplify, v = V(graph_ensemble_simplify))
+
+
 # un vecteur de couleur pour les edges
 E(graph_ensemble_simplify)$colorW <- ifelse(E(graph_ensemble_simplify)$weight == 1, "forestgreen",
                                             ifelse(E(graph_ensemble_simplify)$weight == 2, "orange", "red"))
 
+V(graph_ensemble_simplify)$degree <- degree(graph_ensemble_simplify, v = V(graph_ensemble_simplify))
 
 # un vecteur de couleur pour les vertexes
 V(graph_ensemble_simplify)$colorV <- "gray60"
@@ -203,16 +208,13 @@ graphjs(graph_modaNiv1_simplify,
 
 ## je suis pas fan car c'est la meme chose je le garde au cas ou
 
-
-table(sapply(E(graph_ensemble_simplify)$modaNiv1, '[['))
-
 un.voisin <- graph.neighborhood(graph_ensemble_simplify, order = 1) # attention la fonction evolue vers ego_size
 
 # un vecteur de couleur pour les edges
 E(graph_ensemble_simplify)$colorW <- ifelse(E(graph_ensemble_simplify)$weight == 1, "forestgreen",
                                             ifelse(E(graph_ensemble_simplify)$weight == 2, "orange", "red"))
 
-
+V(graph_ensemble_simplify)$degree <- degree(graph_ensemble_simplify, v = V(graph_ensemble_simplify))
 # un vecteur de couleur pour les vertexes
 V(graph_ensemble_simplify)$colorV <- "gray60"
 
@@ -222,6 +224,44 @@ graphjs(graph_ensemble_simplify,
         vertex.size = log(sapply(un.voisin, vcount))/10,
         edge.color = E(graph_ensemble_simplify)$colorw)
 
+graph_ensemble_simplify <- simplify(graph_relation, edge.attr.comb = list(weight="sum", modaNiv1 = "first") )
+
+un.voisin <- graph.neighborhood(graph_ensemble_simplify, order = 1) # attention la fonction evolue vers ego_size
+
+# un vecteur de couleur pour les edges
+E(graph_ensemble_simplify)$colorW <- ifelse(E(graph_ensemble_simplify)$modaNiv1 == "hiérarchique descendante", "forestgreen",
+                                            ifelse(E(graph_ensemble_simplify)$modaNiv1 ==  "hiérarchique desc. Ecole", "yellow", "red"))
+
+
+library(crosstalk)
+library(leaflet)
+
+sd1 <- SharedData$new(data.frame(Degree = V(graph_ensemble_simplify)$degree))
+sd0 <- SharedData$new(data.frame(lat = V(graph_ensemble_simplify)$lat, lng = V(graph_ensemble_simplify)$lat))
+
+
+summary(data.frame(Degree = V(graph_ensemble_simplify)$degree))
+
+bob <- filter_slider("degree", "Degree", sd1, column=~Degree, step=1)
+
+jim <- leaflet(data = sd0) %>% 
+  addTiles() %>%
+  addProviderTiles(providers$CartoDB.Positron) %>% 
+  addMarkers( lng = ~lng, lat = ~lat)
+
+
+# un vecteur de couleur pour les vertexes
+V(graph_ensemble_simplify)$colorV <- "gray60"
+V(graph_ensemble_simplify)$degree <- degree(graph_ensemble_simplify, v = V(graph_ensemble_simplify))
+
+testgraph <- graphjs(graph_ensemble_simplify, 
+        vertex.label = paste(V(graph_ensemble_simplify)$usual_name, V(graph_ensemble_simplify)$name),
+        vertex.color = V(graph_ensemble_simplify)$colorV,
+        vertex.size = log(sapply(un.voisin, vcount))/10,
+        edge.color = E(graph_ensemble_simplify)$colorW, 
+        crosstalk = sd0, brush = TRUE)
+
+bscols(testgraph, jim)
 
 #  4 - degrés et degrés des voisins ================================
 

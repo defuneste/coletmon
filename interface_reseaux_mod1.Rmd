@@ -4,12 +4,42 @@ output:
   flexdashboard::flex_dashboard:
     orientation: columns
     vertical_layout: fill
-    runtime: shiny
+
 ---
 
 ```{r setup, include=FALSE}
 library(flexdashboard)
+library(threejs)
+library(igraph)
+library(leaflet)
+library(DT)
 library(crosstalk)
+
+source("chargement_graphs.R")
+
+# je prefere des caracteres donc autant garder une syntaxe V pour vertex
+relation_graph <- subset(relation, select = c(idimplantation, fklinked_implantation, modaNiv1))
+relation_graph$idimplantation <-  paste0("V", relation_graph$idimplantation)
+relation_graph$fklinked_implantation <- paste0("V", relation_graph$fklinked_implantation)
+
+implantation.dat$name <- paste0("V", implantation.dat$idimplantation)
+
+# on garde pas tout, il est important que le première colonne contienne les noms de vertex cf help(grap.data.frame)
+implantationVertex.dat <- subset(implantation.dat, select = c(name, usual_name, date_startC_Fact ,  date_stopC_Fact ,  DureeSFact, lat, lng) )
+
+
+# le match est un peu tricky ici car utilisé pour réduire (et ordonner ce qui ne change rien) au vertex ayant des relations
+implantationVertexv2.dat <- implantationVertex.dat[match(unique(c(relation_graph$idimplantation, 
+                                                        relation_graph$fklinked_implantation)), implantationVertex.dat$name),]
+graph_relation <- graph.data.frame(relation_graph, 
+                                   directed = FALSE, 
+                                   vertices = implantationVertexv2.dat) # c'est ici qu' on indique les attributs des vertex, il faut que la première colonne corresponde à celle des vertexes cf help(graph.data.frame) details 3 paragraphs
+
+E(graph_relation)$weight <- 1
+# on fait le nouveau graph avec le poids 
+graph_ensemble_simplify <- simplify(graph_relation, edge.attr.comb = list(weight="sum", modaNiv1 = "first")) 
+
+sd0 <- SharedData$new(data.frame(lat = round(V(graph_ensemble_simplify)$lat, 5), lng = round(V(graph_ensemble_simplify)$lng, 5), Id = V(graph_ensemble_simplify)$name, Name = V(graph_ensemble_simplify)$usual_name))
 
 ```
 
@@ -24,14 +54,16 @@ Column {data-width=400}
 ### Temps
 
 ```{r}
-
+datatable(sd0, rownames=FALSE, class = "compact")
 ```
 
 
 ### Espace géo 2D
 
 ```{r}
-
+leaflet(sd0) %>% 
+  addTiles() %>%
+  addCircles()
 ```
 
 Column {data-width=400}
@@ -41,5 +73,23 @@ Column {data-width=400}
 
 ```{r}
 
+un.voisin <- graph.neighborhood(graph_ensemble_simplify, order = 1) # attention la fonction evolue vers ego_size
+
+# un vecteur de couleur pour les edges
+E(graph_ensemble_simplify)$colorW <- ifelse(E(graph_ensemble_simplify)$modaNiv1 == "hiérarchique descendante", "forestgreen",
+                                            ifelse(E(graph_ensemble_simplify)$modaNiv1 ==  "hiérarchique desc. Ecole", "yellow", "red"))
+
+
+# un vecteur de couleur pour les vertexes
+V(graph_ensemble_simplify)$colorV <- "gray60"
+V(graph_ensemble_simplify)$degree <- degree(graph_ensemble_simplify, v = V(graph_ensemble_simplify))
+
+graphjs(graph_ensemble_simplify, 
+        vertex.label = paste(V(graph_ensemble_simplify)$usual_name, V(graph_ensemble_simplify)$name),
+        vertex.color = V(graph_ensemble_simplify)$colorV,
+        vertex.size = log(sapply(un.voisin, vcount))/10,
+        edge.color = E(graph_ensemble_simplify)$colorW, 
+        brush = TRUE,
+        crosstalk = sd0)
 ```
 
