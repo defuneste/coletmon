@@ -5,6 +5,7 @@
 # .dat est un df ou tible
 # .shp est un sf
 # fonction en chameau : ceci_est_unefonction
+# il y a aussi pas mal de code mort à supprimer ou decommenter en fonction des besoins
 ##.###################################################################################33
 ## I. Chargement des données de col&mon ====
 ##.#################################################################################33
@@ -20,22 +21,27 @@ names(fait.dat)
 # indexage est une liste contenant les variables pour indexer
 Indexage <- list(filtrerelation = "caracNew", # le premier item est juste caracNew
                                               # il est utile pour filtrer relation
+                 # ici c'est la liste de pas mal de variables utiles
                  selectrelation =  c("idimplantation", "usual_name", "fklinked_implantation","linked_implantation_name", 
-                     "modaNiv1", "lat", "lng", "date_startC","date_stopC", "DureeFact"),
-                 buffer = "DureeFact")        # ici c'est la liste de pas mal de variables utiles
+                     "modaNiv1", "lat", "lng", "date_startC","date_stopC"),
+                 # le nom du debut et fin des relations
+                 buffer = c("date_startC","date_stopC"),
+                 # les identifiants de A ---- B
+                 ident_relation = c("idimplantation", "fklinked_implantation"))    
 Indexage[["filtrerelation"]]
 Indexage[["selectrelation"]]
 Indexage[["buffer"]]
+Indexage[["ident_relation"]]
 
 ##.###################################################################################33
-## II. fonction anaviz ====
+## II. fonctions anaviz ====
 ##.#################################################################################33
 
 # 1 - une fonction pour filtrer les relations =================
 # pe pas la plus utile, on peut rajouter un select pour les colonnes que l'on veut garder
 
 filtrer_relation <- function(T0new) {
-    subset(fait.dat, fait.dat[[Indexage[[1]]]] == "Relations")
+    subset(fait.dat, fait.dat[[Indexage[["filtrerelation"]]]] == "Relations")
     #subset(fait.dat, caracNew == "Relations")
 }
 
@@ -126,7 +132,7 @@ relation_total.shp$distance_km <- round(                                    # on
 return(relation_total.shp)
 }
 
-bob <- distance_entre_implantation(relation.dat, implantation.dat)
+# bob <- distance_entre_implantation(relation.dat, implantation.dat)
 
 # 3. Ajouter de l'épaisseur au temps ====================
 
@@ -137,12 +143,66 @@ bob <- distance_entre_implantation(relation.dat, implantation.dat)
 # relation: un df ou un shp des relations avec une durée
 # buffer un numeric 
 
-buffer <- 10
-
 ajout_buffer <- function(relation, buffer){
-    relation[,"date_debut_buffer"] <- relation[Indexage[["buffer"]]] - buffer
-    relation[, "date_fin_buffer"] <- relation[Indexage[["buffer"]]] + buffer
+  # doit on faire un drop, une valeur particulière ou un message pour les valeurs manquantes 
+  # if(anyNA(relation[Indexage[["buffer"]][1]])) 
+  #{stop("Présence de valeurs manquantes dans les dates de début")}
+  # if(anyNA(relation[Indexage[["buffer"]][2]])) 
+  #{stop("Présence de valeurs manquantes dans les dates de fin")}  
+    relation[, "date_debut_buffer"] <- relation[Indexage[["buffer"]][1]] - buffer
+    relation[, "date_fin_buffer"] <- relation[Indexage[["buffer"]][2]] + buffer
     return(relation)
 }
 
-ajout_buffer(relation.dat, buffer = 10)
+relation <- ajout_buffer(relation.dat, buffer = 50)
+
+# 4. Calculer les degrés du réseaux ====================
+# on se place ici dans un réseau simplifié et non dirigés
+# ce sont les noeuds implantations qui sont qualifiés
+# une solution avec igraph
+# la fonction retourne un vecteur dans le meme ordre que les implantations 
+# ou on peut decider d'ajouter 
+
+Indexage[["ident_relation"]][[2]]
+
+calcul_degree_igraph <- function(relation, implantation) {
+  # verification qu; igraph est bien présent
+  if(require("igraph") == FALSE)  
+    install.packages("igraph",  dependencies=c("Depends", "Suggests"))
+  
+  relation_graph <- subset(relation, fklinked_implantation != "NA",  #il y a une valeur manquante
+                           select = c(idimplantation, fklinked_implantation)) 
+  
+  graph_relation <- graph.data.frame(relation_graph, directed = FALSE)
+  graph_ensemble_simplify <- simplify(graph_relation)
+  implantation.dat$degree <- NA
+  implantation.dat$degree[match(
+    unique(c(relation_graph$idimplantation, relation_graph$fklinked_implantation)), 
+    implantation.dat$idimplantation)] <- degree(graph_ensemble_simplify, v = V(graph_ensemble_simplify))
+}
+
+
+# 5. dessin d'un réseaux ====================
+
+
+graph_apartir_id <- function(un_id, un_graph = graph_ensemble_simplify) {
+  if(require("igraph") == FALSE)  
+    install.packages("igraph",  dependencies=c("Depends", "Suggests"))
+  if(require("threejs") == FALSE)  
+    install.packages("threejs",  dependencies=c("Depends", "Suggests"))
+  # on calcul les composantes connexes 
+  V(un_graph)$comps <- as.numeric(membership(components(un_graph)))
+  # on produit un sous graphes qui prends tous les noeuds de la composantes connexes
+  # il faut que les vertexes soit nommés avec "name" puisque j'indexe dessus 
+  un_sous_graph <- induced_subgraph(un_graph, 
+                                    vids = V(un_graph)[comps == V(un_graph)[name == un_id]$comps])
+  
+  graphjs(un_sous_graph,
+          vertex.label = paste(V(un_sous_graph)$usual_name, V(un_sous_graph)$name), # il faut usual name
+          vertex.color = V(un_sous_graph)$colorV, # il faut colorV
+          vertex.size = 0.2, # pe modifier par degree
+          edge.color = E(un_sous_graph)$colorW, 
+          brush=TRUE)
+}
+
+
