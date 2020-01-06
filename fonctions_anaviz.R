@@ -18,12 +18,14 @@ names(fait.dat)
 # 2 - un index pour ce que l'on veut selectionner
 
 # indexage est une liste contenant les variables pour indexer
-Indexage <- list("caracNew" # le premier item est juste caracNew
-                            # il est utile pour filtrer relation
-                 , c("idimplantation", "usual_name", "fklinked_implantation","linked_implantation_name", 
-                     "modaNiv1", "lat", "lng", "date_startC","date_stopC")) # ici c'est la liste de pas mal de variables utiles
-Indexage[[1]]
-Indexage[[2]]
+Indexage <- list(filtrerelation = "caracNew", # le premier item est juste caracNew
+                                              # il est utile pour filtrer relation
+                 selectrelation =  c("idimplantation", "usual_name", "fklinked_implantation","linked_implantation_name", 
+                     "modaNiv1", "lat", "lng", "date_startC","date_stopC", "DureeFact"),
+                 buffer = "DureeFact")        # ici c'est la liste de pas mal de variables utiles
+Indexage[["filtrerelation"]]
+Indexage[["selectrelation"]]
+Indexage[["buffer"]]
 
 ##.###################################################################################33
 ## II. fonction anaviz ====
@@ -41,11 +43,11 @@ filtrer_relation <- function(T0new) {
 # elle a aussi un stop si ce n'est pas un df
 filtrer_relation_select <- function(T0new, selection = names(T0new)) {
     if(!is.data.frame(T0new)){stop("La fonction nécessite un tableau et non un.e", class(T0new) ,"." )}
-    subset(fait.dat, fait.dat[[Indexage[[1]]]] == "Relations", select = selection) # au besoin peut être utiliser Indexage[[2]] pour :  selection = Indexage[[2]]
+    subset(fait.dat, fait.dat[[Indexage[["filtrerelation"]]]] == "Relations", select = selection) # au besoin peut être utiliser Indexage[[2]] pour :  selection = Indexage[[2]]
 }
 
 # ex : 
-relation.dat <- filtrer_relation_select(fait.dat, selection = Indexage[[2]])
+relation.dat <- filtrer_relation_select(fait.dat, selection = Indexage[["selectrelation"]])
 
 # 2. Calculer la distance entre deux implantations liées (pour la portée) ==============================================
 # On construit un nouveau tableau qui contient les lat/long de chaque cote de la relation 
@@ -53,11 +55,12 @@ relation.dat <- filtrer_relation_select(fait.dat, selection = Indexage[[2]])
 # Hélène indique que les lat/long dans relations.dat sont celles de l'implantation (idimplantation) et pas celle lièe (fklinked_implantation).
 # on va donc renomer les lat/lomg des implantations et le noms des implantations puis les joindre pour constituer un tableau avec les coords de A et de B.  
 
-relation <- relation.dat
+#relation <- relation.dat
 
 # la fonction prend :
 # relation un df des relations 
 # implantation un df des implantations
+# selection
 
 distance_entre_implantation <- function(relation, implantation, selection = names(relation)){
     
@@ -66,10 +69,13 @@ distance_entre_implantation <- function(relation, implantation, selection = name
         install.packages("dplyr",  dependencies=c("Depends", "Suggests"))
     if(require("sf") == FALSE)  
         install.packages("sf",  dependencies=c("Depends", "Suggests"))
+
+# un subset au besoin    
+relation.temp <- subset(relation.dat, select = selection)
     
-Relation_renomer <- dplyr::rename(relation,                                     # rename est pas mal utilisé donc on precise la library, il y a une dépendance sur dplyr
-                                  idimpl_link=fklinked_implantation,            # ici on prend l'id lié
-                                  usual_name_link=linked_implantation_name)     # idem pour le nom lié
+Relation_renomer <- dplyr::rename(relation.temp,                                     # rename est pas mal utilisé donc on precise la library, il y a une dépendance sur dplyr
+                                  idimpl_link=fklinked_implantation,                 # ici on prend l'id lié
+                                  usual_name_link=linked_implantation_name)          # idem pour le nom lié
 
 # je vais decouper un peu le pipe d'Hélène avec une table produite pour la jointure 
 # qui va comporter les lat/long des implantations liées
@@ -116,7 +122,27 @@ rm(relation_total.dat)
 relation_total.shp$distance_km <- round(                                    # on va arrondir le résultats à 2 chiffres
     as.numeric(                                                             # je drop units, 
         sf::st_length(relation_total.shp)/1000), 0)                         # on passe en km
+ 
 return(relation_total.shp)
 }
 
-bob <- distance_entre_implantation(relation, implantation.dat)
+bob <- distance_entre_implantation(relation.dat, implantation.dat)
+
+# 3. Ajouter de l'épaisseur au temps ====================
+
+# mettre un stop ou transformer les valeurs non numerique et les negatives ?
+# y compris pour buffer ?
+
+# la fonction prend :
+# relation: un df ou un shp des relations avec une durée
+# buffer un numeric 
+
+buffer <- 10
+
+ajout_buffer <- function(relation, buffer){
+    relation[["date_debut_buffer"]] <- relation[Indexage[["buffer"]]] - buffer
+    relation$date_fin_buffer <- relation[Indexage[["buffer"]]] + buffer
+    return(relation)
+}
+
+ajout_buffer(relation.dat, buffer = 10)
