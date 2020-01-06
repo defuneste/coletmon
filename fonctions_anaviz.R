@@ -140,8 +140,8 @@ bob <- distance_entre_implantation(relation.dat, implantation.dat)
 buffer <- 10
 
 ajout_buffer <- function(relation, buffer){
-    relation[["date_debut_buffer"]] <- relation[Indexage[["buffer"]]] - buffer
-    relation$date_fin_buffer <- relation[Indexage[["buffer"]]] + buffer
+    relation[,"date_debut_buffer"] <- relation[Indexage[["buffer"]]] - buffer
+    relation[, "date_fin_buffer"] <- relation[Indexage[["buffer"]]] + buffer
     return(relation)
 }
 
