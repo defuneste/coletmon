@@ -156,17 +156,48 @@ ajout_buffer <- function(relation, buffer){
 
 relation <- ajout_buffer(relation.dat, buffer = 50)
 
-# 4. Calculer les degrés du réseaux ====================
+# 4. Calculer sur les  réseaux ====================
+
+Indexage[["ident_relation"]][[2]]
+
+# 4.a Mise en place du grah
+# pas encore simplifié
+
+mise_enplace_graph <- function(relation, implantation = NULL ) {
+  # verification qu igraph est bien présent
+  if(require("igraph") == FALSE)  
+    install.packages("igraph",  dependencies=c("Depends", "Suggests"))
+  # les relations 
+    relation_graph <- subset(relation, fklinked_implantation != "NA",  #il y a une valeur manquante
+                           select = c(idimplantation, fklinked_implantation))
+  # les implantations 
+  # filtre implantation pour ordonner et ne garder que les implantations avec des relations
+    if(is.null(implantation))  { implantation_vertex <- NULL } else {
+    implantation_vertex <- implantation[match(unique(c(relation_graph$idimplantation, relation_graph$fklinked_implantation)), 
+                                              implantation$idimplantation),]}
+           
+    graph_relation <- graph.data.frame(relation_graph, 
+                                       directed = FALSE,
+                                       vertices = implantation_vertex )
+}
+
+
+mise_enplace_graph(relation)
+
+graph_relation <- graph.data.frame(relation_graph, 
+                                   directed = FALSE,
+                                   vertices = NULL)
+
+# 4.b
 # on se place ici dans un réseau simplifié et non dirigés
 # ce sont les noeuds implantations qui sont qualifiés
 # une solution avec igraph
 # la fonction retourne un vecteur dans le meme ordre que les implantations 
 # ou on peut decider d'ajouter 
 
-Indexage[["ident_relation"]][[2]]
 
 calcul_degree_igraph <- function(relation, implantation) {
-  # verification qu; igraph est bien présent
+  # verification qu igraph est bien présent
   if(require("igraph") == FALSE)  
     install.packages("igraph",  dependencies=c("Depends", "Suggests"))
   
