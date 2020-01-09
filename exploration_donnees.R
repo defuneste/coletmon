@@ -25,14 +25,14 @@ library(plotly) # des graphiques interactifs
 ## 2 - Les données ================
 
 #celui ci est un tible
-implantation.dat <- readRDS("data/T0impl20191126.rds")
+implantation.dat <- readRDS("data/T0implChgt20191213")
 class(implantation.dat)
 ## vieille structure des données 
 # implantation.dat <- readRDS("data/T0impl.Rds")
 # names(implantation.dat)
 
 #celui ci est un df
-fait.dat <- readRDS("data/T0New20191126.rds")
+fait.dat <- readRDS("data/T0NewChgt20191213")
 class(fait.dat)
 summary(fait.dat)
 unique(fait.dat$caracNew)
