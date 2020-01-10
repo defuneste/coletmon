@@ -96,7 +96,7 @@ mapImplVite <- function(ImpSel.shp, Vcolor)
 verif_relation <- function(num_relation) {
     relation.dat[relation.dat$idimplantation %in% num_relation,]}
 
-print("verif_relation prend une idimplantatiom et retourne un subset dans relation.dat pour cet idimplantation")
+print("verif_relation prend une idimplantation ou plusieurs et retourne un subset dans relation.dat pour cet idimplantation")
 
 
 verif_relationv2 <- function(num_idimplantation, num_fklinked = NULL) {
@@ -107,4 +107,5 @@ verif_relationv2 <- function(num_idimplantation, num_fklinked = NULL) {
         }
 
 
+print("verif_relationv2 prend une idimplantation ou plusieurs et une fklinked et retourne un subset dans relation.dat pour ces couples")
 

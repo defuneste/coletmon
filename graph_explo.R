@@ -117,13 +117,9 @@ V(graph_relation)$name
 #which_multiple retourne les liens doubles, un vecteur F/T
 doublon.dat <- relation_graph[which_multiple(graph_relation),]
 
-verif_relation(c(40,99))
-
-doublon <- verif_relationv2(doublon.dat$idimplantation,doublon.dat$fklinked_implantation)
-openxlsx::write.xlsx(file = "doublon.xlsx", doublon)
-writeRDS(doublon, "doublon.txt")
-
-verif_relationv2(40)
+#verif_relation(c(40,99))
+#doublon <- verif_relationv2(doublon.dat$idimplantation,doublon.dat$fklinked_implantation)
+#openxlsx::write.xlsx(file = "doublon.xlsx", doublon)
 
 # combien en a-t-il ?
 nrow(relation_graph[which_multiple(graph_relation),])
