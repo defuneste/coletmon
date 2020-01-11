@@ -80,7 +80,7 @@ ggplot(implantation_relation) +
 # préparation des données
 
 # je prefere des caracteres donc autant garder une syntaxe V pour vertex
-relation_graph <- subset(relation, select = c(idimplantation, fklinked_implantation, modaNiv1))
+relation_graph <- subset(relation, select = c(idimplantation, fklinked_implantation, modaNiv1, idfactoid))
 # rajout du modaNiv1 suite à update de DB du 2019/11/26
 relation_graph$modaNiv1 <- factor(relation_graph$modaNiv1)
 relation_graph$idimplantation <-  paste0("V", relation_graph$idimplantation)
@@ -89,7 +89,7 @@ relation_graph$fklinked_implantation <- paste0("V", relation_graph$fklinked_impl
 implantation.dat$name <- paste0("V", implantation.dat$idimplantation)
 
 # on garde pas tout, il est important que la première colonne contienne les noms de vertex cf. help(grap.data.frame)
-implantation.dat <- implantation.dat[!is.na(implantation.dat$lat)]
+implantation.dat <- implantation.dat[!is.na(implantation.dat$lat),]
 implantationVertex.dat <- subset(implantation.dat, select = c(name, usual_name, date_startC_Fact ,  date_stopC_Fact ,  DureeSFact, lat, lng) )
 length(unique(implantationVertex.dat$name))
 
@@ -105,8 +105,8 @@ dim(implantationVertexv2.dat)
 
 
 graph_relation <- graph.data.frame(relation_graph, 
-                                   directed = FALSE, 
-                                   vertices = implantationVertexv2.dat)
+                                   directed = TRUE, 
+                                   vertices = NULL)
 
  
 
@@ -115,7 +115,12 @@ is_simple(graph_relation) # on a plusieurs liens pour un meme couple de noeud
 V(graph_relation)$name
 
 #which_multiple retourne les liens doubles, un vecteur F/T
-relation_graph[which_multiple(graph_relation),]
+doublon.dat <- relation_graph[which_multiple(graph_relation),]
+
+#verif_relation(c(40,99))
+#doublon <- verif_relationv2(doublon.dat$idimplantation,doublon.dat$fklinked_implantation)
+#openxlsx::write.xlsx(file = "doublon.xlsx", doublon)
+
 # combien en a-t-il ?
 nrow(relation_graph[which_multiple(graph_relation),])
 # quels sont les vertex et leur nombres 

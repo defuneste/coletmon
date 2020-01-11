@@ -6,3 +6,5 @@
 /data
 # du rproj
 *.Rproj
+*.txt
+*.xlsx

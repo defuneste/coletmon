@@ -55,7 +55,9 @@ filtrer_relation_select <- function(T0new, selection = names(T0new)) {
 # ex : 
 relation.dat <- filtrer_relation_select(fait.dat, selection = Indexage[["selectrelation"]])
 
-# 2. Calculer la distance entre deux implantations liées (pour la portée) ==============================================
+# 2. Renforcement du jeux de données T0News 
+
+# 2.a Calculer la distance entre deux implantations liées (pour la portée) ==============================================
 # On construit un nouveau tableau qui contient les lat/long de chaque cote de la relation 
 # l'objectif est de dessiner les liens sur une carte : de A -> B
 # Hélène indique que les lat/long dans relations.dat sont celles de l'implantation (idimplantation) et pas celle lièe (fklinked_implantation).
@@ -133,6 +135,16 @@ return(relation_total.shp)
 }
 
 # bob <- distance_entre_implantation(relation.dat, implantation.dat)
+
+
+# 2.b 
+
+names(relation_total.shp)
+
+table(relation_total.shp$modaNiv1)
+
+
+
 
 # 3. Ajouter de l'épaisseur au temps ====================
 
