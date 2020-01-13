@@ -75,15 +75,21 @@ relation.dat$role[relation.dat$modaNiv1 == "hiérarchique desc. Ecole"] <- "Domi
 vecteur_degree <- c("hiérarchique descendante", "Relation horizontale", "hiérarchique desc. Ecole")
 nom_degree <- c("degre_dominant", "degre_association", "degre_ecole")
 
-relation.dat[, nom_degree[1]] <- NA
-  # note oliver pour cette après midi on peut faire une boucle sur les trois categories et calculer le tout ?
-  relation.dat <- relation.dat %>% 
-    group_by(idimplantation) %>% 
-    summarize(glue::glue(nom_degree[1]) = n()) %>%  # on compte par ce group
-    left_join(implantation_relation, by = "idimplantation")
+relation.dat[, "degre_dominant"] <- NA
+relation.dat[, "degre_association"] <- NA
+relation.dat[, "degre_ecole"] <- NA
 
-  
-    
+hiérarchique_descendante <- subset(relation.dat, relation.dat$modaNiv1 == "hiérarchique descendante") %>% 
+    group_by(idimplantation) %>% 
+    summarize(degre_dominant = n()) 
+Relation_horizontale <- subset(relation.dat, relation.dat$modaNiv1 == "Relation horizontale") %>% 
+    group_by(idimplantation) %>% 
+    summarize(degre_association = n()) 
+degre_ecole <- ubset(relation.dat, relation.dat$modaNiv1 == "hiérarchique desc. Ecole") %>% 
+    group_by(idimplantation) %>% 
+    summarize(degre_ecole = n())
+
+
 for(i in length(1:vecteur_degree)){
   nom_degree <- c("degre_dominant", "degre_association", "degre_ecole")
 relation <- subset(relation.dat, relation.dat$modaNiv1 == vecteur_degree[i]) 
