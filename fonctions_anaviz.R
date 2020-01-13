@@ -55,9 +55,49 @@ filtrer_relation_select <- function(T0new, selection = names(T0new)) {
 # ex : 
 relation.dat <- filtrer_relation_select(fait.dat, selection = Indexage[["selectrelation"]])
 
-# 2. Renforcement du jeux de données T0News 
+# 2. Renforcement du jeux de données T0News ====================
 
-# 2.a Calculer la distance entre deux implantations liées (pour la portée) ==============================================
+# 2.a Ajout de role ============================
+
+unique(relation.dat$modaNiv1)
+
+relation.dat$role <- NA
+relation.dat$role[relation.dat$modaNiv1 == "hiérarchique ascendante"] <- "Dominé"
+relation.dat$role[relation.dat$modaNiv1 == "hiérarchique descendante"] <- "Dominant"
+relation.dat$role[relation.dat$modaNiv1 == "Relation horizontale"] <- "Égal"
+relation.dat$role[relation.dat$modaNiv1 == "hiérarchique desc. Ecole"] <- "Dominant_ecole"
+
+#2.b Calcul des degrés pour les difŕents reseaux =======
+# degre_dominant  Degré sortant d’idimplantation
+# degre_reseau Degré d’idimplantation association
+# degre_ecole Degré d’idimplantation vers école
+
+vecteur_degree <- c("hiérarchique descendante", "Relation horizontale", "hiérarchique desc. Ecole")
+nom_degree <- c("degre_dominant", "degre_association", "degre_ecole")
+
+relation.dat[, nom_degree[1]] <- NA
+  # note oliver pour cette après midi on peut faire une boucle sur les trois categories et calculer le tout ?
+  relation.dat <- relation.dat %>% 
+    group_by(idimplantation) %>% 
+    summarize(glue::glue(nom_degree[1]) = n()) %>%  # on compte par ce group
+    left_join(implantation_relation, by = "idimplantation")
+
+  
+    
+for(i in length(1:vecteur_degree)){
+  nom_degree <- c("degre_dominant", "degre_association", "degre_ecole")
+relation <- subset(relation.dat, relation.dat$modaNiv1 == vecteur_degree[i]) 
+}
+
+
+graphjs(graph_relation,
+        vertex.label = paste(V(graph_relation)$usual_name, V(graph_relation)$name), # il faut usual name
+        #vertex.color = V(un_sous_graph)$colorV, # il faut colorV
+        vertex.size = 0.2, # pe modifier par degree
+        #edge.color = E(un_sous_graph)$colorW, 
+        brush=TRUE)
+
+# 2.c Calculer la distance entre deux implantations liées (pour la portée) ==============================================
 # On construit un nouveau tableau qui contient les lat/long de chaque cote de la relation 
 # l'objectif est de dessiner les liens sur une carte : de A -> B
 # Hélène indique que les lat/long dans relations.dat sont celles de l'implantation (idimplantation) et pas celle lièe (fklinked_implantation).
@@ -135,15 +175,6 @@ return(relation_total.shp)
 }
 
 # bob <- distance_entre_implantation(relation.dat, implantation.dat)
-
-
-# 2.b 
-
-names(relation_total.shp)
-
-table(relation_total.shp$modaNiv1)
-
-
 
 
 # 3. Ajouter de l'épaisseur au temps ====================

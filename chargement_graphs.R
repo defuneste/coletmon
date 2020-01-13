@@ -24,9 +24,11 @@ implantation.dat <- subset(implantation.dat, select = - X)
 relation.dat <- fait.dat[fait.dat$caracNew == "Relations" ,] # Extractions des relations
 # Extraction des Déplacement 
 relation.dat <- relation.dat[relation.dat$modaNiv1 != "Déplacement",]
-relation <- subset(relation.dat, !(relation.dat$modaNiv1 == "hiérarchique asc. Ecole" | relation.dat$modaNiv1 == "hiérarchique ascendante") ) # on enleve les doublons
-relation <- subset(relation, select =  c("idimplantation", "usual_name", "fklinked_implantation","linked_implantation_name", "modaNiv1", "lat", "lng", "date_startC","date_stopC", "idfactoid")) # on ne garde que les noms et noms liées
+
+relation <- subset(relation.dat, select =  c("idimplantation", "usual_name", "fklinked_implantation","linked_implantation_name", "modaNiv1", "lat", "lng", "date_startC","date_stopC", "idfactoid")) # on ne garde que les noms et noms liées
 relation <- relation[!is.na(relation$lat),]
+# à decocher au besoin et modifier : relation / relation.dat
+#relation <- subset(relation.dat, !(relation.dat$modaNiv1 == "hiérarchique asc. Ecole" | relation.dat$modaNiv1 == "hiérarchique ascendante") ) # on enleve les doublons
 # Drop des facteurs- non pris en compte suite aux subset de relations
 relation$usual_name <- factor(relation$usual_name)
 relation$linked_implantation_name <- factor(relation$linked_implantation_name)
