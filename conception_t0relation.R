@@ -91,9 +91,11 @@ distance_entre_implantation <- function(relation, selection = names(relation)){
     
     # je vais decouper un peu le pipe d'Hélène avec une table produite pour la jointure 
     # qui va comporter les lat/long des implantations liées
-    implantation_renomer <-  dplyr::select(relation.temp, idimpl_link = idimplantation, # selon la doc on peut directement renomer dans un select
+    implantation_renomer <-  relation.temp %>% 
+                             dplyr::select( idimpl_link = idimplantation, # selon la doc on peut directement renomer dans un select
                                            lat_link = lat, 
-                                           lng_link = lng) 
+                                           lng_link = lng) %>% 
+                             dplyr::distinct(idimpl_link, .keep_all = TRUE)
     
     # Jointure via idimpl_link
     relation_total.dat <- dplyr::left_join(Relation_renomer, implantation_renomer, by = "idimpl_link")

@@ -7,7 +7,6 @@ library(threejs)
 
 T0relation <- readRDS("data/T0relation.rds")
 
-
 mise_enplace_graph <- function(relation, implantation = NULL ) {
     # verification qu igraph est bien présent
     if(require("igraph") == FALSE)  
@@ -26,7 +25,22 @@ mise_enplace_graph <- function(relation, implantation = NULL ) {
                                        vertices = implantation_vertex )
 }
 
-bob <- mise_enplace_graph(T0relation, implantation.dat)
+bob <- mise_enplace_graph(T0relation, vertex_v1)
+
+is.simple(bob)
+
+relation_graph <- subset(T0relation, fklinked_implantation != "NA",  #il y a une valeur manquante
+                         select = c(idimplantation, fklinked_implantation))
+
+vertex <- st_drop_geometry(T0relation)
+
+vertex_v1 <-  vertex[match(unique(c(relation_graph$idimplantation, relation_graph$fklinked_implantation)), 
+             vertex$idimplantation),]
+
+
+graph_relation <- graph.data.frame(relation_graph, 
+                                   directed = FALSE,
+                                   vertices = vertex_v1 )
 
 graph_relation <- bob
 
