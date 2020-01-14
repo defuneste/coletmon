@@ -86,8 +86,8 @@ distance_entre_implantation <- function(relation, selection = names(relation)){
     relation.temp <- subset(relation, select = selection)
     
     Relation_renomer <- dplyr::rename(relation.temp,                                     # rename est pas mal utilisé donc on precise la library, il y a une dépendance sur dplyr
-                                      idimpl_link=fklinked_implantation,                 # ici on prend l'id lié
-                                      usual_name_link=linked_implantation_name)          # idem pour le nom lié
+                                      idimpl_link = fklinked_implantation,                 # ici on prend l'id lié
+                                      usual_name_link = linked_implantation_name)          # idem pour le nom lié
     
     # je vais decouper un peu le pipe d'Hélène avec une table produite pour la jointure 
     # qui va comporter les lat/long des implantations liées
@@ -102,7 +102,7 @@ distance_entre_implantation <- function(relation, selection = names(relation)){
     rm(Relation_renomer, implantation_renomer)
     
     # si il y a des valeurs manquantes on les drop
-    relation_total.dat <- dplyr::filter(relation_total.dat, !is.na(lat) & !is.na(lat_link)) # pourra être supprimer quand la base sera "propre"
+    relation_total.dat <- dplyr::filter(relation_total.dat, !is.na(lat) & !is.na(lat_link)) # pourra être supprimé quand la base sera "propre"
     
     # matrice de départ
     from.dat  <- as.matrix(                                           # on passe tout dans une matrice
@@ -134,10 +134,13 @@ distance_entre_implantation <- function(relation, selection = names(relation)){
     relation_total.shp$distance_km <- round(                                    # on va arrondir le résultats à 2 chiffres
         as.numeric(                                                             # je drop units, 
             sf::st_length(relation_total.shp)/1000), 0)                         # on passe en km
+    # on rename idimpl_link pour fklinked
+    relation_total.shp <- dplyr::rename(relation_total.shp, fklinked_implantation = idimpl_link)
     
     return(relation_total.shp)
 }
 
 T0relation <- distance_entre_implantation(T0relation)
+
 
 saveRDS(T0relation, file = "data/T0relation.rds")

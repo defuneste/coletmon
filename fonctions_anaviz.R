@@ -95,18 +95,10 @@ degre_ecole <- subset(relation.dat, relation.dat$modaNiv1 == "hiérarchique desc
     group_by(idimplantation) %>% 
     summarize(degre_ecole = n())
 
-test <- relation.dat %>%
+relation.dat <- relation.dat %>%
     left_join(hiérarchique_descendante, by = "idimplantation") %>% 
     left_join(Relation_horizontale, by = "idimplantation") %>% 
     left_join(degre_ecole, by = "idimplantation" )
-
-
-graphjs(graph_relation,
-        vertex.label = paste(V(graph_relation)$usual_name, V(graph_relation)$name), # il faut usual name
-        #vertex.color = V(un_sous_graph)$colorV, # il faut colorV
-        vertex.size = 0.2, # pe modifier par degree
-        #edge.color = E(un_sous_graph)$colorW, 
-        brush=TRUE)
 
 # 2.c Calculer la distance entre deux implantations liées (pour la portée) ==============================================
 # On construit un nouveau tableau qui contient les lat/long de chaque cote de la relation 
@@ -222,7 +214,7 @@ mise_enplace_graph <- function(relation, implantation = NULL ) {
   if(require("igraph") == FALSE)  
     install.packages("igraph",  dependencies=c("Depends", "Suggests"))
   # les relations 
-    relation_graph <- subset(relation, fklinked_implantation != "NA",  #il y a une valeur manquante
+    relation_graph <- subset(relation, in != "NA",  #il y a une valeur manquante
                            select = c(idimplantation, fklinked_implantation))
   # les implantations 
   # filtre implantation pour ordonner et ne garder que les implantations avec des relations
