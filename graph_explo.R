@@ -202,6 +202,12 @@ E(graph_modaNiv1_simplify)$colorW <- ifelse(E(graph_modaNiv1_simplify)$weight ==
 
 un.voisin <- graph.neighborhood(graph_modaNiv1_simplify, order = 1) # attention la fonction evolue vers ego_size
 
+deux.voisins  <- graph.neighborhood(graph_modaNiv1_simplify, order = 2)
+trois.voisins  <- graph.neighborhood(graph_modaNiv1_simplify, order = 3)
+sapply(deux.voisins, vcount)
+sapply(un.voisin, vcount)
+sapply(trois.voisins, vcount)
+
 # un vecteur de couleur pour les vertexes
 V(graph_modaNiv1_simplify)$colorV <- "gray60"
 
