@@ -79,21 +79,26 @@ relation.dat[, "degre_dominant"] <- NA
 relation.dat[, "degre_association"] <- NA
 relation.dat[, "degre_ecole"] <- NA
 
+# ici on fait un identifiant pour chaque couple de liens et on filtre pour ne pas voir les doublons
+
+relation.dat <- relation.dat %>% 
+    mutate(lien_id = paste(idimplantation, fklinked_implantation)) %>% 
+    distinct(lien_id, .keep_all = TRUE)
+
 hiérarchique_descendante <- subset(relation.dat, relation.dat$modaNiv1 == "hiérarchique descendante") %>% 
-    group_by(idimplantation) %>% 
+    group_by(idimplantation, fklinked_implantation) %>% 
     summarize(degre_dominant = n()) 
 Relation_horizontale <- subset(relation.dat, relation.dat$modaNiv1 == "Relation horizontale") %>% 
     group_by(idimplantation) %>% 
     summarize(degre_association = n()) 
-degre_ecole <- ubset(relation.dat, relation.dat$modaNiv1 == "hiérarchique desc. Ecole") %>% 
+degre_ecole <- subset(relation.dat, relation.dat$modaNiv1 == "hiérarchique desc. Ecole") %>% 
     group_by(idimplantation) %>% 
     summarize(degre_ecole = n())
 
-
-for(i in length(1:vecteur_degree)){
-  nom_degree <- c("degre_dominant", "degre_association", "degre_ecole")
-relation <- subset(relation.dat, relation.dat$modaNiv1 == vecteur_degree[i]) 
-}
+test <- relation.dat %>%
+    left_join(hiérarchique_descendante, by = "idimplantation") %>% 
+    left_join(Relation_horizontale, by = "idimplantation") %>% 
+    left_join(degre_ecole, by = "idimplantation" )
 
 
 graphjs(graph_relation,
