@@ -35,4 +35,4 @@ unique(T0relation$modaNiv1)
 
 T0relation <- T0relation[T0relation$modaNiv1 == "hiérarchique asc. Ecole",]
 
-head(degreCum(T0relation, 3), 20)
+head(degreCum(T0relation, 0), 20)

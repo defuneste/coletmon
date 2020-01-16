@@ -5,10 +5,11 @@
 library(igraph)
 library(threejs)
 library(sf)
+library(dplyr)
 
 T0relation <- readRDS("data/T0relation.rds")
 
-implantation.dat <- readRDS("data/T0impl20191126.rds")
+#implantation.dat <- readRDS("data/T0impl20191126.rds")
 
 # je vire les deplacements car cela pose pb 
 # T0relation[ ! T0relation$idimplantation %in% T0relation$fklinked_implantation,   ]
@@ -19,18 +20,37 @@ T0relation$role[is.na(T0relation$role)] <- "Ecole"
 
 table(T0relation$role, T0relation$modaNiv1)
 
-implantation <- T0relation
+# me faut une table ID - NOM
 
+partA <- T0relation %>% 
+    st_drop_geometry() %>% 
+    select(idimplantation, usual_name)
+
+idimpl_nom <- T0relation %>% 
+    st_drop_geometry() %>% 
+    select(idimplantation = fklinked_implantation, usual_name = usual_name_link) %>% 
+    bind_rows(partA) %>% 
+    distinct(idimplantation, .keep_all = TRUE)
+
+# un exemple de filtre
 T0relation <- T0relation[T0relation$modaNiv1 == "Relation horizontale",]
-
-niveau_hierarchique <- 1 # 
 
 vertex <- st_drop_geometry(T0relation)
 
-#vertex <- vertex[vertex$modaNiv1 == "hiérarchique descendante",]
-
 relation_graph <- subset(vertex , fklinked_implantation != "NA",  #il y a une valeur manquante
-                         select = c(idimplantation, fklinked_implantation))
+                         select = c(idimplantation, fklinked_implantation, usual_name,  modaNiv1))
+
+
+# dans les cas ou modaNiv1 == "Relation horizontale"
+
+idimplantation <- unique(c(relation_graph$idimplantation, relation_graph$fklinked_implantation))
+role <- rep("Égal", length(idimplantation))
+implantation <- data.frame(idimplantation, role) %>% 
+    left_join(idimpl_nom, by = "idimplantation")
+
+# dans les cas ou modaNiv1 == "hiérarchique descendante"
+
+
 
 # length(unique(relation_graph$idimplantation))
 # 
@@ -47,16 +67,16 @@ vertex_v1 <-  implantation[match(unique(c(relation_graph$idimplantation, relatio
 # dim(vertex_v1)
 
 graph_relation <- graph.data.frame(relation_graph, 
-                                   directed = TRUE, # ici on est dans un graph dirigé
+                                   directed = TRUE, # ici on est dans un graph dirigé / ou non dirigé en fonction
                                    vertices = vertex_v1 )
 V(graph_relation)
 V(graph_relation)$role
 
 graph_modaNiv1_simplify <- simplify(graph_relation) # mal absolu 
 
-niveau_hierarchique <- 3 # 
-un.voisin <- make_ego_graph(graph_modaNiv1_simplify, order = niveau_hierarchique, mode = "out") # attention la fonction evolue vers ego_size
-sapply(un.voisin, vcount)
+niveau_hierarchique <- 2 # 
+voisin <- make_ego_graph(graph_modaNiv1_simplify, order = niveau_hierarchique, mode = "out") # attention la fonction evolue vers ego_size
+sapply(voisin, vcount)
 
 V(graph_modaNiv1_simplify)$colorV <- ifelse(V(graph_modaNiv1_simplify)$role == "Dominant" | V(graph_modaNiv1_simplify)$role == "Dominant_ecole", "blue",
                                   ifelse(V(graph_modaNiv1_simplify)$role == "Dominé", "red", 
@@ -67,7 +87,7 @@ V(graph_modaNiv1_simplify)$shape <- ifelse(V(graph_modaNiv1_simplify)$role == "E
 graphjs(graph_modaNiv1_simplify,
         vertex.label = paste(V(graph_modaNiv1_simplify)$usual_name, V(graph_modaNiv1_simplify)$name), # il faut usual name
         vertex.color = V(graph_modaNiv1_simplify)$colorV,
-        vertex.size = log(sapply(un.voisin, vcount))/5,
+        vertex.size = log(sapply(voisin, vcount))/5,
         vertex.shape = V(graph_modaNiv1_simplify)$shape,
         #edge.color = E(un_sous_graph)$colorW, 
         brush=TRUE)
