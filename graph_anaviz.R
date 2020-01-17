@@ -32,8 +32,10 @@ idimpl_nom <- T0relation %>%
     bind_rows(partA) %>% 
     distinct(idimplantation, .keep_all = TRUE)
 
+rm(partA)
+
 # un exemple de filtre
-T0relation <- T0relation[T0relation$modaNiv1 == "Relation horizontale",]
+T0relation <- T0relation[T0relation$modaNiv1 == "hiérarchique descendante",]
 
 vertex <- st_drop_geometry(T0relation)
 
@@ -50,7 +52,10 @@ implantation <- data.frame(idimplantation, role) %>%
 
 # dans les cas ou modaNiv1 == "hiérarchique descendante"
 
+names(relation_graph)
 
+relation_graph %>% 
+    anti_join(relation_graph, by = c("fklinked_implantation" = "idimplantation"))
 
 # length(unique(relation_graph$idimplantation))
 # 
