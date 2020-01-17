@@ -26,7 +26,7 @@ degreCum_modaNiv1 <- function(relation, niveau_hierarchique = 10000, ValmodaNiv1
     # attention fonction à partir de igraph 1.0
     voisin <- make_ego_graph(graph_relation, order = niveau_hierarchique, mode = "out")
     # un vecteur des idimplantation
-    idimplantation <- V(graph_relation)$name
+    idimplantation <- as.numeric(V(graph_relation)$name)
     # la somme des degrés pour chaque id pour pleins de voisins, ici 10000
     degreCum <- sapply(voisin, vcount)
     # on a besoin de modaNiv1
@@ -57,11 +57,15 @@ for(i in 1:length(unique(relation$modaNiv1))) {
 
 # 2 - pour tester ================= 
 
-unique(T0relation$modaNiv1)
-
-bob <- degreCum(T0relation)
-
-# verif
-bob %>% 
-    filter(modaNiv1 == "Relation horizontale") %>% 
-    arrange(degreCum)
+# # unique(T0relation$modaNiv1)
+# 
+# T0relation <- T0relation[T0relation$modaNiv1 == "hiérarchique ascendante",]
+# 
+#  bob <- degreCum(T0relation)
+# 
+# 
+# 
+# # verif
+# bob %>%
+#     # filter(modaNiv1 == "Relation horizontale") %>%
+#     arrange(desc(degreCum))

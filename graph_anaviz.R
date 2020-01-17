@@ -1,4 +1,4 @@
-# un script un graph pour les relations
+# un script un graph faire un graph
 # 14/01/2020
 # col&mon
 
@@ -6,129 +6,93 @@ library(igraph)
 library(threejs)
 library(sf)
 library(dplyr)
+library(readxl)
 
+
+# 1 - chargement des rds =================
 T0relation <- readRDS("data/T0relation.rds")
+unique(T0relation$modaNiv1)
+# les couleurs : 
 
-#implantation.dat <- readRDS("data/T0impl20191126.rds")
+CaracHist <-readxl::read_excel("data/NewModelCaracModalitesColor5.xlsx",
+                              sheet = "color")
+ColRelations <- filter(CaracHist, caracNew == "Relations") %>% 
+                    select(modaNiv1, modaNiv1_Color)
+
+
+# on charge degrecum.R
+source("degrecum.R")
 
 # je vire les deplacements car cela pose pb 
-# T0relation[ ! T0relation$idimplantation %in% T0relation$fklinked_implantation,   ]
-# unique(T0relation$modaNiv1)
+
 
 T0relation <- T0relation[!T0relation$modaNiv1 == "Déplacement",]
 T0relation$role[is.na(T0relation$role)] <- "Ecole"
 
-table(T0relation$role, T0relation$modaNiv1)
+# # A l'initialisation de l'onglet on est en modaNiv1 = "hiérarchique descendante"
+T0relation <- T0relation[T0relation$modaNiv1 == "hiérarchique descendante" | T0relation$modaNiv1 == "hiérarchique asc. Ecole",]
+relation <- T0relation
 
-# me faut une table ID - NOM
+dessine_moi_un_graph <- function(relation) {
 
-partA <- T0relation %>% 
+# il me faut une table ID - NOM  pour caractériser les noeuds avec leurs noms et idimplantation en visualisation
+# tant qu'a faire j' ai repris le degré de degrecum, l'avantage c'est que c'est consistant le désavantage c'est que cela n'affichera pas les bon degres
+# si on a plus d'une modaNiv1
+
+partA <- relation %>% 
     st_drop_geometry() %>% 
     select(idimplantation, usual_name)
 
-idimpl_nom <- T0relation %>% 
+idimpl_nom <- relation %>% 
     st_drop_geometry() %>% 
     select(idimplantation = fklinked_implantation, usual_name = usual_name_link) %>% 
     bind_rows(partA) %>% 
-    distinct(idimplantation, .keep_all = TRUE)
+    distinct(idimplantation, .keep_all = TRUE) %>% 
+    left_join(degreCum(T0relation), by = "idimplantation") ### <- c'est la le degreCum ==========
 
 rm(partA)
 
-# un exemple de filtre
-T0relation <- T0relation[T0relation$modaNiv1 == "hiérarchique descendante",]
+# ici c'est pour alleger le graph on peut au besoin ne pas garder et n'utiliser que T0relation
+# il faut alors en tenir compte dans vertex_v1
 
-vertex <- st_drop_geometry(T0relation)
+relation_graph <- relation %>% 
+    st_drop_geometry() %>% 
+    filter( !is.na(fklinked_implantation)) %>%  # au cas ou on a des NA
+    select(idimplantation, fklinked_implantation, usual_name,  modaNiv1) %>% 
+    # On rajoute les couleurs
+    left_join(ColRelations, by = "modaNiv1")
 
-relation_graph <- subset(vertex , fklinked_implantation != "NA",  #il y a une valeur manquante
-                         select = c(idimplantation, fklinked_implantation, usual_name,  modaNiv1))
+# permet d'ordonner, ne garder que les premiers des vertexes
+vertex_v1 <-  idimpl_nom[match(unique(c(relation_graph$idimplantation, relation_graph$fklinked_implantation)), 
+                               idimpl_nom$idimplantation),]
 
+# on fait le graph
+graph_modaNiv1_simplify <- graph.data.frame(relation_graph, 
+                                            directed = TRUE, # ici on est dans un graph dirigé / ou non dirigé en fonction
+                                            vertices = vertex_v1 ) %>% 
+                            igraph::simplify(edge.attr.comb = "first") # mal absolu, ici j'ai mis first pour avoir la couleur, ce qui ne devrait pas changer
 
-# dans les cas ou modaNiv1 == "Relation horizontale"
+# je garde au cas ou on se pose des questions sur la couleur des vertex sinon cela peut sauter
+# V(graph_modaNiv1_simplify)$colorV <- ifelse(V(graph_modaNiv1_simplify)$modaNiv1 == "hiérarchique descendante" | V(graph_modaNiv1_simplify)$modaNiv1 == "hiérarchique desc. Ecole", "blue",
+#                                   ifelse(V(graph_modaNiv1_simplify)$modaNiv1 == "hiérarchique ascendante", "red", 
+#                                          ifelse(V(graph_modaNiv1_simplify)$modaNiv1 == "Relation horizontale", "forestgreen", "black")))
 
-idimplantation <- unique(c(relation_graph$idimplantation, relation_graph$fklinked_implantation))
-role <- rep("Égal", length(idimplantation))
-implantation <- data.frame(idimplantation, role) %>% 
-    left_join(idimpl_nom, by = "idimplantation")
+V(graph_modaNiv1_simplify)$shape <- ifelse(V(graph_modaNiv1_simplify)$modaNiv1 == "hiérarchique asc. Ecole" , "square", "circle")
 
-# dans les cas ou modaNiv1 == "hiérarchique descendante"
-
-names(relation_graph)
-
-relation_graph %>% 
-    anti_join(relation_graph, by = c("fklinked_implantation" = "idimplantation"))
-
-# length(unique(relation_graph$idimplantation))
-# 
-# length(unique(relation_graph$fklinked_implantation))
-
-# il me faut une option pour dessiner les vertex à partir des relations 
-# length(unique(c(relation_graph$idimplantation, relation_graph$fklinked_implantation)))
-# ou alors il me faut un moyen pour reconstituer les vertexes à prtir de la sélection
-
-vertex_v1 <-  implantation[match(unique(c(relation_graph$idimplantation, relation_graph$fklinked_implantation)), 
-             implantation$idimplantation),]
-
-
-# dim(vertex_v1)
-
-graph_relation <- graph.data.frame(relation_graph, 
-                                   directed = TRUE, # ici on est dans un graph dirigé / ou non dirigé en fonction
-                                   vertices = vertex_v1 )
-V(graph_relation)
-V(graph_relation)$role
-
-graph_modaNiv1_simplify <- simplify(graph_relation) # mal absolu 
-
-niveau_hierarchique <- 2 # 
-voisin <- make_ego_graph(graph_modaNiv1_simplify, order = niveau_hierarchique, mode = "out") # attention la fonction evolue vers ego_size
-sapply(voisin, vcount)
-
-V(graph_modaNiv1_simplify)$colorV <- ifelse(V(graph_modaNiv1_simplify)$role == "Dominant" | V(graph_modaNiv1_simplify)$role == "Dominant_ecole", "blue",
-                                  ifelse(V(graph_modaNiv1_simplify)$role == "Dominé", "red", 
-                                         ifelse(V(graph_modaNiv1_simplify)$role == "Égal", "forestgreen", "black")))
-
-V(graph_modaNiv1_simplify)$shape <- ifelse(V(graph_modaNiv1_simplify)$role == "Ecole" , "square", "circle")
-
+# la fonction de dessin du graph
 graphjs(graph_modaNiv1_simplify,
+        # pour que le nom apparaisse quand on passe dessus
         vertex.label = paste(V(graph_modaNiv1_simplify)$usual_name, V(graph_modaNiv1_simplify)$name), # il faut usual name
-        vertex.color = V(graph_modaNiv1_simplify)$colorV,
-        vertex.size = log(sapply(voisin, vcount))/5,
+        vertex.color = rep("gray", vcount(graph_modaNiv1_simplify)),
+        vertex.size = log(vertex_v1$degreCum + 1)/5, # ici il y a pe une amelioration à faire max(log(vertex_v1$degreCum))
         vertex.shape = V(graph_modaNiv1_simplify)$shape,
-        #edge.color = E(un_sous_graph)$colorW, 
+        edge.color = E(graph_modaNiv1_simplify)$modaNiv1_Color,
+        edge.width = 1.25, # a modifire en fonction de l'affichage
         brush=TRUE)
 
-
-graphjs(graph_relation,
-        #vertex.label = paste(V(graph_relation)$usual_name, V(graph_relation)$name), # il faut usual name
-        #vertex.color = V(graph_modaNiv1_simplify)$colorV,
-        vertex.size = 0.2, # pe modifier par degree
-        #vertex.shape = "square",
-        #edge.color = E(un_sous_graph)$colorW, 
-        brush=TRUE)
-
-
-
-
-mise_enplace_graph <- function(relation, implantation = NULL ) {
-    # verification qu igraph est bien présent
-    if(require("igraph") == FALSE)  
-        install.packages("igraph",  dependencies=c("Depends", "Suggests"))
-    # les relations 
-    relation_graph <- subset(relation, fklinked_implantation != "NA",  #il y a une valeur manquante
-                             select = c(idimplantation, fklinked_implantation))
-    # les implantations 
-    # filtre implantation pour ordonner et ne garder que les implantations avec des relations
-    if(is.null(implantation))  { implantation_vertex <- NULL } else {
-        implantation_vertex <- implantation[match(unique(c(relation_graph$idimplantation, relation_graph$fklinked_implantation)), 
-                                                  implantation$idimplantation),]}
-    
-    graph_relation <- graph.data.frame(relation_graph, 
-                                       directed = FALSE,
-                                       vertices = implantation_vertex )
 }
 
-mise_enplace_graph(T0relation, implantation.dat)
+# 2 - pour tester ================= 
 
-
-
+dessine_moi_un_graph(T0relation)
 
