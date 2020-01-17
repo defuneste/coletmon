@@ -18,7 +18,9 @@ degreCum_modaNiv1 <- function(relation, niveau_hierarchique = 10000, ValmodaNiv1
         filter( !is.na(fklinked_implantation) & modaNiv1 == ValmodaNiv1) %>%
         select(idimplantation, fklinked_implantation)
         # on fait le graph et on le siplifie
-    graph_relation <- simplify(graph.data.frame(relation, directed = TRUE)) 
+    graph_relation <- simplify(graph.data.frame(relation, 
+    # ici si on est en "Relation horizontale" on est dans un graph non dirigé sinon dirigé
+                                                directed = ifelse(ValmodaNiv1 == "Relation horizontale", FALSE, TRUE))) 
     # simplify=mal absolu car par defaut ne garde que la première ligne du doublon
     
     # attention fonction à partir de igraph 1.0
@@ -31,6 +33,10 @@ degreCum_modaNiv1 <- function(relation, niveau_hierarchique = 10000, ValmodaNiv1
     modaNiv1 <- rep(ValmodaNiv1, length(idimplantation))
     return(data.frame(idimplantation, modaNiv1, degreCum))
 }
+
+test <- unique(T0relation$modaNiv1)
+
+ifelse(test == "Relation horizontale", FALSE, TRUE)
 
 relation <- T0relation
 
@@ -53,6 +59,9 @@ for(i in 1:length(unique(relation$modaNiv1))) {
 
 unique(T0relation$modaNiv1)
 
-T0relation <- T0relation[T0relation$modaNiv1 == "hiérarchique asc. Ecole",]
+bob <- degreCum(T0relation)
 
-degreCum(T0relation)
+# verif
+bob %>% 
+    filter(modaNiv1 == "Relation horizontale") %>% 
+    arrange(degreCum)
