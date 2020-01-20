@@ -65,30 +65,36 @@ niveau <- 15
 
 #### bordel ===============================
 
-length(as_ids(get_diameter(cluny)))
+
+idimplantation_saisie <- 99
+relation <- T0relation
+
+voisinage_local_opt1(T0relation, 99, 2)
 
 
-for(i in 1:length(as_ids(get_diameter(cluny)))) {
-ifelse(i == 1, 
-    idimplantation <- as_ids(ego(cluny, order = 1 , "99")[[1]])
-    niveau <- rep(1, length(idimplantation))
-bob <- data.frame(test, niv), )
+relation_graph <- relation %>% 
+  st_drop_geometry() %>% 
+  filter( !is.na(fklinked_implantation)) %>%  # au cas ou on a des NA
+  select(idimplantation, fklinked_implantation, usual_name,  modaNiv1)
 
-test <- as_ids(ego(cluny, order = 2 , "99")[[1]])
-niv <- rep(2, length(test))
-bill <- data.frame(test, niv)
+# on fait un graph
+graph_relation <- simplify(graph.data.frame(relation_graph, 
+                                            # ici si on est en "Relation horizontale" on est dans un graph non dirigé sinon dirigé
+                                            directed = FALSE)) # à noter on est en non dirigé
 
-test <- as_ids(ego(cluny, order = 3 , "99")[[1]])
-niv <- rep(3, length(test))
-jim <-data.frame(test, niv)
+sous_graph <- graph_a_partir_id(idimplantation_saisie, graph_relation)
+
+
+length(as_ids(get_diameter(sous_graph)))
+
+
+for(i in 1:length(as_ids(get_diameter(sous_graph)))) {
 
 test <- bind_rows(bob, bill)   %>% bind_rows(jim) %>% distinct(test, .keep_all = TRUE)
 
 }
 
 
-
-un_sous_graph <- cluny
 
 graphjs(un_sous_graph,
         vertex.label = paste(V(un_sous_graph)$usual_name, V(un_sous_graph)$name), # il faut usual name
