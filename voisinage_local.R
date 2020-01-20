@@ -5,22 +5,13 @@ T0relation <- readRDS("data/T0relation.rds")
 # on vire les deplacements
 T0relation <- T0relation[!T0relation$modaNiv1 == "Déplacement",]
 
-unique(T0relation$modaNiv1)
-
-relation <- T0relation
-relation_graph <- relation %>% 
-  st_drop_geometry() %>% 
-  filter( !is.na(fklinked_implantation)) %>%  # au cas ou on a des NA
-  select(idimplantation, fklinked_implantation, usual_name,  modaNiv1)
-
-graph_relation <- simplify(graph.data.frame(relation_graph, 
-                                            # ici si on est en "Relation horizontale" on est dans un graph non dirigé sinon dirigé
-                                            directed = FALSE)) 
-
-un_graph <- graph_relation
-un_id <- 99
-
-V(graph_relation)[name == 99]
+## un fonction pour faire des graph à partir d'une idimplantation et un graph 
+# la fonction à besoin d'un idimplantation
+# et d'un graph, par defaut elle prendre un objet graph_relation
+# elle retourne un objet igraph
+# elle utilise les composantes connexes et attribue un nombre à chacune d'entre elles 
+# puis elle va produire un sous graph en indexant les vertex par la composante connexes d'apartenance de l'id
+# elle necessite igraph 
 
 graph_a_partir_id <- function(un_id, un_graph = graph_relation) {
   # on calcul les composantes connexes 
@@ -33,11 +24,49 @@ graph_a_partir_id <- function(un_id, un_graph = graph_relation) {
 }
   
 
-cluny <- graph_a_partir_id(99)
 
-neighbors(cluny, "99")
+## une fonction pour obtenir un tableau d'idimplantations à partir de T0relation filtré et du niveau
+## la fonction necessite la fonction graph_a_partir_id et igraph
+# elle prend relation = T0relation filtré
+# une idimplantation
+# un niveau
+
+voisinage_local_opt1 <- function(relation, idimplantation_saisie, niveau) {
+
+# ici on allége T0relation et on evite des potentiels NA
+relation_graph <- relation %>% 
+  st_drop_geometry() %>% 
+  filter( !is.na(fklinked_implantation)) %>%  # au cas ou on a des NA
+  select(idimplantation, fklinked_implantation, usual_name,  modaNiv1)
+
+# on fait un graph
+graph_relation <- simplify(graph.data.frame(relation_graph, 
+                                            # ici si on est en "Relation horizontale" on est dans un graph non dirigé sinon dirigé
+                                            directed = FALSE)) # à noter on est en non dirigé
+# la j'avoue, c'est un peu imbriqué mais la majorité est pour retourner le bon format
+# as.numerics et as_ids ne servent que pour retourner les idimplantation en numeric
+# on genere un sous graph directement via un appel de graph_a_partir_id
+# sur lequel on va demander toutes les idimplantation  à un niveau
+# si niveau = 3, ego va retourner les idimplantation de niveau 1,2 et 3
+idimplantation <- as.numeric(as_ids(ego(graph_a_partir_id(idimplantation_saisie, graph_relation), 
+                                        order = niveau , as.character(idimplantation_saisie))[[1]]))
+# la suite est juste la constitution d'un df avec le niveau repeté et l'id
+niveau <- rep(niveau, times = length(idimplantation))
+return(data.frame(idimplantation, niveau))
+
+}
+
+voisinage_local_opt1(T0relation, 99, 2)
+
+#pour tester
+relation <- T0relation
+idimplantation_saisie <- 99
+niveau <- 15
+
+#### bordel ===============================
 
 length(as_ids(get_diameter(cluny)))
+
 
 for(i in 1:length(as_ids(get_diameter(cluny)))) {
 ifelse(i == 1, 
