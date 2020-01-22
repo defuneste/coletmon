@@ -61,11 +61,10 @@ un_df <- as_data_frame(
 un_df$niveau <- niveau
 # on range pour avoir une bonne tete de T0New filtre
 un_df <- un_df %>% 
-    dplyr::rename("idimplantation" = to, "fklinked_implantation" = from) %>% 
-    dplyr::select(idimplantation, fklinked_implantation, usual_name, usual_name_link, modaNiv1, idfactoid, niveau) %>% 
-    mutate(idimplantation = as.numeric(idimplantation),
-              fklinked_implantation = as.numeric(fklinked_implantation))
-    
+    select(idfactoid) %>% 
+    left_join(relation_graph, by = "idfactoid") %>% 
+    mutate(niveau = niveau)
+
 return(un_df)
 }
 
@@ -122,13 +121,15 @@ return(do.call(rbind, une_list) %>%
 
 #### pour tester =======
 
-T0relation_filtre <- T0relation[T0relation$modaNiv1 == "hiérarchique ascendante",]
+T0relation_filtre <- T0relation[T0relation$modaNiv1 == "hiérarchique descendante",]
 
 bob <- voisinage_local_opt2(T0relation_filtre, 99)
+            
 
 bob2 <- bob %>% 
-    left_join(T0relation, by = "idfactoid", suffix = c("", "_rajout")) %>% 
-    st_as_sf()
+    left_join(T0relation_filtre, by = "idfactoid", suffix = c("", "_rajout")) %>% 
+    st_as_sf() %>% 
+    filter(niveau <= 1)
 
 dessine_moi_un_graph(bob2)
 

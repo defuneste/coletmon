@@ -24,8 +24,6 @@ ColRelations <- filter(CaracHist, caracNew == "Relations") %>%
 source("degrecum.R")
 
 # je vire les deplacements car cela pose pb 
-
-
 T0relation <- T0relation[!T0relation$modaNiv1 == "Déplacement",]
 T0relation$role[is.na(T0relation$role)] <- "Ecole"
 
@@ -52,7 +50,7 @@ idimpl_nom <- relation %>%
     select(idimplantation = fklinked_implantation, usual_name = usual_name_link) %>% 
     bind_rows(partA) %>% 
     distinct(idimplantation, .keep_all = TRUE) %>% 
-    left_join(degreCum(T0relation), by = "idimplantation") ### <- c'est la le degreCum ==========
+    left_join(degreCum(relation), by = "idimplantation") ### <- c'est la le degreCum ==========
 
 rm(partA)
 
