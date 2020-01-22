@@ -1,0 +1,56 @@
+---
+title: "Rapport suite à un nouveau chargement de la base fusion"
+author: "olivier-Helene"
+date: "22 janvier 2020"
+output: 
+    bookdown::html_document2:
+        theme: readable
+        toc: true
+        toc_float: true
+        number_sections: true
+        fig_caption: yes
+        code_folding: hide
+---
+
+
+```{r setup, include = FALSE}
+library(tidyr)
+library(dplyr) # manip données
+library(ggplot2) #  graphiques
+library(plotly) # graphiques un peu interactif
+library(sf)
+```
+
+
+# Chargement des données
+
+Ici faut-il prendre en compte un T0new + 1 et un T0new ?
+
+```{r}
+source("conception_t0relation.R")
+```
+
+# Niveau global
+
+## Modalité des relations
+
+On obtient `r nrow(T0relation)` factoides avec une `relation`. Le tableau \@ref(tab:modalite) donne les frequences par type de liens (`modaNiv1`). Les relations peuvent être hiérarchiques ou horizontales, dans les cas hiérarchique, elles peuvent être ascendantes et descendantes. Elles peuvent ensuite être ascendantes/descendantes vers une école ou vers un autre type d'implantations. 
+
+(ref:modalite-caption) Distribution des fréquences par type de liens
+
+```{r, modalite}
+knitr::kable(t(table(T0relation$modaNiv1)),
+             caption = "(ref:modalite-caption)")
+```
+
+
+## Stats sur degré globale et par type
+
+NB : pour le moment on est pas en cumulé
+
+Comme les hiérarchies ascendantes sont le miroir des descendantes (idem pour les écoles) nous proposons de nous restreindre qu'aux relations `hiérarchique descendante`, `Relation horizontale` et `hiérarchique desc. Ecole`. 
+
+```{r}
+
+```
+

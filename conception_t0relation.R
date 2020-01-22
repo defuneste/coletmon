@@ -1,6 +1,6 @@
 # un script qui reprend toutes les fonctions et operations pour produire t0relation
 # 14/01/2020
-#c ol&mon
+# col&mon
 
 
 # Lecture des fichiers sources
@@ -51,8 +51,8 @@ T0relation <- T0relation %>%
     distinct(lien_id, .keep_all = TRUE) %>% 
     select(-lien_id)
 
+print("Attention : les doublons idimplantation ---- fklinked_implantation ne sont pas gardés")
 
-    
 # comptage des liens par type de modaNiv1
 
 hiérarchique_descendante <- subset(T0relation, T0relation$modaNiv1 == "hiérarchique descendante") %>% 
@@ -145,4 +145,4 @@ distance_entre_implantation <- function(relation, selection = names(relation)){
 T0relation <- distance_entre_implantation(T0relation)
 
 
-saveRDS(T0relation, file = "data/T0relation.rds")
+#saveRDS(T0relation, file = "data/T0relation.rds")
