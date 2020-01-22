@@ -13,7 +13,7 @@ fait.dat <- readRDS("data/T0New20191126.rds")
 Indexage <- list(filtrerelation = "caracNew", # le premier item est juste caracNew
                  # il est utile pour filtrer relation
                  # ici c'est la liste de pas mal de variables utiles
-                 selectrelation =  c("idimplantation", "usual_name", "fklinked_implantation","linked_implantation_name", 
+                 selectrelation =  c("idfactoid", "idimplantation", "usual_name", "fklinked_implantation","linked_implantation_name", 
                                      "modaNiv1", "lat", "lng", "date_startC","date_stopC"),
                  # le nom du debut et fin des relations
                  buffer = c("date_startC","date_stopC"),
@@ -145,4 +145,4 @@ distance_entre_implantation <- function(relation, selection = names(relation)){
 T0relation <- distance_entre_implantation(T0relation)
 
 
-#saveRDS(T0relation, file = "data/T0relation.rds")
+saveRDS(T0relation, file = "data/T0relation.rds")

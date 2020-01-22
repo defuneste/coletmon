@@ -35,6 +35,10 @@ relation <- T0relation
 
 dessine_moi_un_graph <- function(relation) {
 
+    # if (class(relation) == "sf") {
+    #     relation <- st_drop_geometry(relation)
+    # }
+    
 # il me faut une table ID - NOM  pour caractériser les noeuds avec leurs noms et idimplantation en visualisation
 # tant qu'a faire j' ai repris le degré de degrecum, l'avantage c'est que c'est consistant le désavantage c'est que cela n'affichera pas les bon degres
 # si on a plus d'une modaNiv1

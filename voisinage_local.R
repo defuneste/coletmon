@@ -10,6 +10,7 @@ T0relation <- readRDS("data/T0relation.rds")
 # on vire les deplacements
 T0relation <- T0relation[!T0relation$modaNiv1 == "Déplacement",]
 
+
 ## un fonction pour faire des graph à partir d'une idimplantation et un graph 
 # la fonction à besoin d'un idimplantation
 # et d'un graph, par defaut elle prendre un objet graph_relation
@@ -18,13 +19,13 @@ T0relation <- T0relation[!T0relation$modaNiv1 == "Déplacement",]
 # puis elle va produire un sous graph en indexant les vertex par la composante connexes d'apartenance de l'id
 # elle necessite igraph 
 
-graph_a_partir_id <- function(un_id, un_graph = graph_relation) {
+graph_a_partir_id <- function(un_graph = graph_relation, idimplantation_saisie) {
   # on calcul les composantes connexes 
   V(un_graph)$comps <- as.numeric(membership(components(un_graph)))
   # on produit un sous graphes qui prends tous les noeuds de la composantes connexes 
-  # il faut que les vertexes soit nommés avec "name" puisque j'indexe dessus 
+  # il faut que les vertexes soient nommés avec "name" puisque j'indexe dessus 
   un_sous_graph <- induced_subgraph(un_graph, 
-                                    vids = V(un_graph)[comps == V(un_graph)[name == un_id]$comps])
+                                    vids = V(un_graph)[comps == V(un_graph)[name == idimplantation_saisie]$comps])
   return(un_sous_graph)
 }
   
@@ -42,31 +43,38 @@ voisinage_local_opt1 <- function(relation, idimplantation_saisie, niveau) {
 relation_graph <- relation %>% 
   st_drop_geometry() %>% 
   filter( !is.na(fklinked_implantation)) %>%  # au cas ou on a des NA
-  select(idimplantation, fklinked_implantation, usual_name,  modaNiv1)
+  select( idimplantation, fklinked_implantation, usual_name,  usual_name_link, modaNiv1, idfactoid)
 
 # on fait un graph
-graph_relation <- simplify(graph.data.frame(relation_graph, 
+graph_relation <- graph.data.frame(relation_graph, 
                                             # ici si on est en "Relation horizontale" on est dans un graph non dirigé sinon dirigé
-                                            directed = FALSE)) # à noter on est en non dirigé
-# la j'avoue, c'est un peu imbriqué mais la majorité est pour retourner le bon format
-# as.numerics et as_ids ne servent que pour retourner les idimplantation en numeric
-# on genere un sous graph directement via un appel de graph_a_partir_id
-# sur lequel on va demander toutes les idimplantation  à un niveau
-# si niveau = 3, ego va retourner les idimplantation de niveau 1,2 et 3
-idimplantation <- as.numeric(as_ids(ego(graph_a_partir_id(idimplantation_saisie, graph_relation), 
-                                        order = niveau , as.character(idimplantation_saisie))[[1]]))
-# la suite est juste la constitution d'un df avec le niveau repeté et l'id
-niveau <- rep(niveau, times = length(idimplantation))
-return(data.frame(idimplantation, niveau))
+                                            directed = FALSE) # à noter on est en non dirigé
+# a documenter
+un_sousgraph <- graph_a_partir_id(graph_relation, as.character(idimplantation_saisie))
 
+un_df <- as_data_frame(
+    make_ego_graph(un_sousgraph,
+                   order = niveau, 
+                   nodes = V(un_sousgraph)[name = as.character(idimplantation_saisie)])[[1]])
+
+# on ajoute le niveau
+un_df$niveau <- niveau
+# on range pour avoir une bonne tete de T0New filtre
+un_df <- un_df %>% 
+    dplyr::rename("idimplantation" = to, "fklinked_implantation" = from) %>% 
+    dplyr::select(idimplantation, fklinked_implantation, usual_name, usual_name_link, modaNiv1, idfactoid, niveau) %>% 
+    mutate(idimplantation = as.numeric(idimplantation),
+              fklinked_implantation = as.numeric(fklinked_implantation))
+    
+return(un_df)
 }
 
-#pour tester
+# pour tester =========
 relation <- T0relation
 idimplantation_saisie <- 99
 niveau <- 15
 
-voisinage_local_opt1(T0relation, 99, 2)
+bob <- voisinage_local_opt1(T0relation, 99, 1)
 
 #### voisinage_local_opt2 ===============================
 # cette fonction produit pour un TOrelation et une idimplantation saisie un tableau avec :
@@ -85,7 +93,7 @@ voisinage_local_opt2 <- function(relation, idimplantation_saisie) {
 relation_graph <- relation %>% 
   st_drop_geometry() %>% 
   filter( !is.na(fklinked_implantation)) %>%  # au cas ou on a des NA
-  select(idimplantation, fklinked_implantation, usual_name,  modaNiv1)
+  select(idimplantation, fklinked_implantation, usual_name,  usual_name_link, modaNiv1)
 
 # on fait un graph
 graph_relation <- simplify(graph.data.frame(relation_graph, 
@@ -93,7 +101,7 @@ graph_relation <- simplify(graph.data.frame(relation_graph,
                                             directed = FALSE)) # à noter on est en non dirigé
 # on peut gagner en objet intermediaire en passant directement graph_relation dans graph_a_partir_id
 # mais on perds en lisbilité
-sous_graph <- graph_a_partir_id(idimplantation_saisie, graph_relation)
+sous_graph <- graph_a_partir_id(graph_relation, idimplantation_saisie)
 
 # on initialise la list
 une_list <- list()
@@ -108,13 +116,22 @@ for(i in 1:length(as_ids(get_diameter(sous_graph)))) {
 # on ajoute les differents tableaux
 return(do.call(rbind, une_list) %>%
            # on filtre en ne gardant que la première valeur d'idimplantation
-            dplyr::distinct(idimplantation, .keep_all = TRUE))
+            dplyr::distinct(idfactoid, .keep_all = TRUE))
 }
 
 
-#### pour tester 
+#### pour tester =======
 
-voisinage_local_opt2(T0relation, 99)
+T0relation_filtre <- T0relation[T0relation$modaNiv1 == "hiérarchique ascendante",]
+
+bob <- voisinage_local_opt2(T0relation_filtre, 99)
+
+bob2 <- bob %>% 
+    left_join(T0relation, by = "idfactoid", suffix = c("", "_rajout")) %>% 
+    st_as_sf()
+
+dessine_moi_un_graph(bob2)
 
 # le diamétre est de 15 mais avec 8 niveau on arrive à avoir toutes les implantations
 table(voisinage_local_opt2(T0relation, 99)$niveau)
+
