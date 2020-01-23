@@ -69,11 +69,11 @@ return(un_df)
 }
 
 # pour tester =========
-relation <- T0relation
-idimplantation_saisie <- 99
-niveau <- 15
-
-bob <- voisinage_local_opt1(T0relation, 99, 1)
+# relation <- T0relation
+# idimplantation_saisie <- 99
+# niveau <- 15
+# 
+# bob <- voisinage_local_opt1(T0relation, 99, 1)
 
 #### voisinage_local_opt2 ===============================
 # cette fonction produit pour un TOrelation et une idimplantation saisie un tableau avec :
@@ -81,8 +81,8 @@ bob <- voisinage_local_opt1(T0relation, 99, 1)
 # cette fonction nécessite graph_a_partir_id() et voisinage_local_opt1()
 # elle utilise igraph et dplyr
 
-idimplantation_saisie <- 99
-relation <- T0relation
+# idimplantation_saisie <- 99
+# relation <- T0relation
 
 voisinage_local_opt2 <- function(relation, idimplantation_saisie) {
 
@@ -129,7 +129,7 @@ bob <- voisinage_local_opt2(T0relation_filtre, 99)
 bob2 <- bob %>% 
     left_join(T0relation_filtre, by = "idfactoid", suffix = c("", "_rajout")) %>% 
     st_as_sf() %>% 
-    filter(niveau <= 1)
+    filter(niveau <= 2)
 
 dessine_moi_un_graph(bob2)
 
