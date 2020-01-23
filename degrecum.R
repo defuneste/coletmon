@@ -55,13 +55,30 @@ for(i in 1:length(unique(relation$modaNiv1))) {
      return(degre_cum_modaNiv1)
 }
 
+# une version sans message d'erreur et plus optimisé
+
+degreCumv2 <- function(relation) {
+    
+    une_list <- list()
+    
+    for(i in 1:length(unique(relation$modaNiv1))) {
+        
+        une_itération <- degreCum_modaNiv1(relation, ValmodaNiv1 = unique(relation$modaNiv1)[i]) 
+        # puis on ajoute
+        une_list[[i]] <- une_itération
+        
+    }
+    return(do.call(rbind, une_list))
+}
+
+
 # 2 - pour tester ================= 
 
 # # unique(T0relation$modaNiv1)
 # 
-# T0relation <- T0relation[T0relation$modaNiv1 == "hiérarchique ascendante",]
+# T0relation_filtre <- T0relation[T0relation$modaNiv1 == "hiérarchique ascendante",]
 # 
-#  bob <- degreCum(T0relation)
+#  bob <- degreCum( T0relation_filtre)
 # 
 # 
 # 

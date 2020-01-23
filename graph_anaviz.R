@@ -11,6 +11,7 @@ library(readxl)
 
 # 1 - chargement des rds =================
 T0relation <- readRDS("data/T0relation.rds")
+T0relation <- readRDS("data/T0relation20200122.rds")
 unique(T0relation$modaNiv1)
 # les couleurs : 
 
