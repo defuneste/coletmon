@@ -24,10 +24,38 @@ library(sf)
 
 # Chargement des données
 
-Ici faut-il prendre en compte un T0new + 1 et un T0new ?
+Ici faut-il prendre en compte un T0new + 1 et un T0new ? 
 
-```{r}
-source("conception_t0relation.R")
+Ici plutot que de reprendre le script de production de `conception_t0relation.R`, je suis parti d'un import spécifique. La première raison est de vouloir garder les doublons idimplantations --- fklinked_implantations car ici il est prévu de poduire les statistiques decriptives sur un pas de temps de 100 ans permettant vraisemblablement d'éviter les doublons. La seconde raison est de travailler avec une colonne geometry uniquement au besoin pour alléger les calculs et éviter l'utilisation de méthodes pour ces objets pas toutes optimisées. Enfin, il y a des relations dont l'implantation n'a pas de lat/lng. 
+
+```{r import_donnee}
+#source("conception_t0relation.R")
+T0relation <- readRDS("data/T0Newchgt20200122.rds") %>% 
+    # filtre sur les relations
+    filter(caracNew == "Relations") %>% 
+    # pas les déplacement
+    filter(modaNiv1 != "Déplacement") %>%
+    # on garde un nombre limité de champs
+    select(idfactoid, # id du factoid
+           idimplantation, # id de l'implantation
+           usual_name, # nom de l'implantation
+           modaNiv1, # modalité du type relation ex : Relation horizontale
+           fklinked_implantation, # id de l' implantation lié, dans le cas d'un choix de graph dirigé idimplantation ---> fklinked_implantation
+           linked_implantation_name, # nom de l'implantation lié
+           lat, # lat de l'idimplantation
+           lng, # lng de l'idimplantation
+           date_startC, # date de debut de la relation
+           date_stopC # date de fin de la relation
+           )
+
+
+# chargement des couleurs de la visualisation pour les graphiques 
+CaracHist <-readxl::read_excel("data/NewModelCaracModalitesColor5.xlsx",
+                              sheet = "color")
+ColRelations <- filter(CaracHist, caracNew == "Relations") %>% 
+                    select(modaNiv1, modaNiv1_Color)
+
+rm(CaracHist)
 ```
 
 # Niveau global
@@ -46,11 +74,28 @@ knitr::kable(t(table(T0relation$modaNiv1)),
 
 ## Stats sur degré globale et par type
 
-NB : pour le moment on est pas en cumulé
+NB : pour le moment on est pas en degré cumulé
 
-Comme les hiérarchies ascendantes sont le miroir des descendantes (idem pour les écoles) nous proposons de nous restreindre qu'aux relations `hiérarchique descendante`, `Relation horizontale` et `hiérarchique desc. Ecole`. 
+Le tableau de contingence (\@ref(tab:degregobaletype)) reprend le nombre d'implantation répartie par type de relation et par degré.  
+
+
+```{r, degregobaletype, results='asis'}
+implantation_relation <- T0relation %>% 
+    group_by(idimplantation, modaNiv1) %>% # on groupe par usual name et modaNiv1
+    summarize(nb = n()) %>%  # on compte par ce group
+    arrange(desc(nb))  # on passe en decroissant
+
+degre_gobale_type <- as.data.frame.matrix(t(table(implantation_relation$modaNiv1, implantation_relation$nb)))
+degre_gobale_type$Degré <- row.names(degre_gobale_type)
+
+cat("<Tableau>",paste0("<caption>", "(#tab:degregobaletype)", ' Contingences d\'implantations par degré et type de relation', "</caption>"),"</tableau>", sep ="\n")
+DT::datatable(degre_gobale_type)
+```
+
+## Stats des durées par type
 
 ```{r}
-
+# pour les durées il faut ne pas garder les NA dans date_start et stop et calculer 
+relation_sans_A.dat <- relation_sans_A.dat[!is.na(relation_sans_A.dat$date_startC),]
 ```
 
