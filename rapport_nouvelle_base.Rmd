@@ -54,7 +54,13 @@ T0relation <- readRDS("data/T0Newchgt20200122.rds") %>%
 CaracHist <-readxl::read_excel("data/NewModelCaracModalitesColor5.xlsx",
                               sheet = "color")
 ColRelations <- filter(CaracHist, caracNew == "Relations") %>% 
-                    select(modaNiv1, modaNiv1_Color)
+                    select(modaNiv1, modaNiv1_Color) %>% 
+                    filter(!is.na(modaNiv1_Color)) %>% 
+                    distinct(modaNiv1, .keep_all = TRUE) %>% 
+                    arrange(modaNiv1)
+
+T0relation <- T0relation %>% 
+    left_join(ColRelations, by ="modaNiv1")
 
 rm(CaracHist)
 ```
@@ -104,7 +110,7 @@ T0relation_sans_NA <- T0relation[!is.na(T0relation),] %>%
 ```
 
 
-Il y a `r nrow(T0relation_sans_NA[T0relation_sans_NA$durée != 0,])` relations ou la durée est nulle. Les autres cas sont representé par la figure \@ref(fig:durremodalite).
+Il y a `r nrow(T0relation_sans_NA[T0relation_sans_NA$durée != 0,])` relations ou la durée est nulle. Les autres cas sont representés par la figure \@ref(fig:durremodalite). (attention on doublone pour les relations hiérarchiques)
 
 
 (ref:durremodalite) Boites à moustaches des durées en fonction des modalités de relation
@@ -123,7 +129,7 @@ y <- list(
 
 T0relation_sans_NA <- T0relation_sans_NA[T0relation_sans_NA$durée != 0,]
 
-plot_ly(T0relation_sans_NA, y = ~durée, color = ~modaNiv1, type = "box",
+plot_ly(T0relation_sans_NA, y = ~durée, color = ~modaNiv1, type = "box", colors = ColRelations$modaNiv1_Color, 
         text = paste(T0relation_sans_NA$usual_name, T0relation_sans_NA$modalite, T0relation_sans_NA$linked_implantation, sep = "\n")) %>% 
 layout(yaxis = y)   
 
@@ -144,5 +150,46 @@ graph_relation <- graph.data.frame(relation, directed = FALSE)
 comps <- components(graph_relation)
 ```
 
-Pour les points suivants je n'ai pas gardé les `hiérarchique asc. Ecole` ni les `hiérarchique ascendante` car elles doublonnait avec leur vis à vis descendantes. On obtient `r comps$no` composantes connexes.
+Pour les points suivants je n'ai pas gardé les `hiérarchique asc. Ecole` ni les `hiérarchique ascendante` car elles doublonnaient avec leur vis à vis descendantes. On obtient `r comps$no` composantes connexes.
+
+
+```{r}
+library(crosstalk)
+library(threejs)
+library(DT)
+
+
+partA <- relation %>% 
+    select(idimplantation, usual_name)
+
+idimpl_nom <- relation %>% 
+    select(idimplantation = fklinked_implantation, usual_name) %>% 
+    bind_rows(partA) %>% 
+    distinct(idimplantation, .keep_all = TRUE)
+
+rm(partA)
+
+vertex_v1 <-  idimpl_nom[match(unique(c(relation$idimplantation, relation$fklinked_implantation)), 
+                               idimpl_nom$idimplantation),]
+
+graph_relation <- graph.data.frame(relation, directed = FALSE, vertices = vertex_v1)
+# components renvoie une liste comportant le nombre de composantes connexes, la taille de chacune d'entre elles et l'appartenance ds 
+
+
+V(graph_relation)$comps <- as.numeric(membership(components(graph_relation)))
+V(graph_relation)$colorV <- "gray60"
+
+sd = SharedData$new(data.frame(Id = V(graph_relation)$name, Noms = V(graph_relation)$usual_name))
+
+bscols(
+    graphjs(graph_relation,
+            vertex.label = paste(V(graph_relation)$usual_name, V(graph_relation)$name), # il faut usual name
+            vertex.color = V(graph_relation)$colorV, # il faut colorV
+            vertex.size = 0.2, # pe modifier par degree
+            brush=TRUE, 
+            crosstalk=sd, 
+            width=450),
+    datatable(sd, rownames=FALSE, options=list(dom='tp'), width=450)
+)
+```
 
