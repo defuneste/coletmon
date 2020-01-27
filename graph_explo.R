@@ -44,7 +44,7 @@ source("chargement_graphs.R")
 # paths est le chemin pour connecter des points, ont peu le mesurer
 # le chemin le plus long est nommer le diamètre du réseau
 # ego(g, 2, "F", mode=c("out")) retourne tous les vertex qui sont à n liens du noeud en fonction de in/out/all 
-# betweenness. This is an index of how frequently the vertex lies on shortest paths between any two vertices in the network.s
+# . This is an index of how frequently the vertex lies on shortest paths between any two vertices in the network.s
 # assortativity est interessante sur les ordres
 # fastgreedy.communauty pour la detection de communauté 
 # regarder threejs
