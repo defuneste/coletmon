@@ -163,7 +163,6 @@ partA <- relation %>%
     select(idimplantation, usual_name)
 
 idimpl_nom <- relation %>% 
-    # à corriger une erreur sur usual_name
     select(idimplantation = fklinked_implantation, usual_name) %>% 
     bind_rows(partA) %>% 
     distinct(idimplantation, .keep_all = TRUE)
