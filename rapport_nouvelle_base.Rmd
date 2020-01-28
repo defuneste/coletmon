@@ -142,7 +142,7 @@ layout(yaxis = y)
 # filtre des ascendantes
 relation <- subset(T0relation, !(T0relation$modaNiv1 == "hiérarchique asc. Ecole" | T0relation$modaNiv1 == "hiérarchique ascendante") ) %>% 
     # attention c'est important d'avoir les deux premières colonnes qui indiquent les liens A ---- B 
-    select(idimplantation, fklinked_implantation, usual_name, modaNiv1, idfactoid)
+    select(idimplantation, fklinked_implantation, usual_name, linked_implantation_name,modaNiv1, idfactoid)
 
 #graph
 graph_relation <- graph.data.frame(relation, directed = FALSE)
@@ -153,7 +153,7 @@ comps <- components(graph_relation)
 Pour les points suivants je n'ai pas gardé les `hiérarchique asc. Ecole` ni les `hiérarchique ascendante` car elles doublonnaient avec leur vis à vis descendantes. On obtient `r comps$no` composantes connexes.
 
 
-```{r}
+```{r, fig.align="center"}
 library(crosstalk)
 library(threejs)
 library(DT)
@@ -163,7 +163,7 @@ partA <- relation %>%
     select(idimplantation, usual_name)
 
 idimpl_nom <- relation %>% 
-    select(idimplantation = fklinked_implantation, usual_name) %>% 
+    select(idimplantation = fklinked_implantation, usual_name = linked_implantation_name) %>% 
     bind_rows(partA) %>% 
     distinct(idimplantation, .keep_all = TRUE)
 
@@ -174,22 +174,31 @@ vertex_v1 <-  idimpl_nom[match(unique(c(relation$idimplantation, relation$fklink
 
 graph_relation <- graph.data.frame(relation, directed = FALSE, vertices = vertex_v1)
 # components renvoie une liste comportant le nombre de composantes connexes, la taille de chacune d'entre elles et l'appartenance ds 
-
-
 V(graph_relation)$comps <- as.numeric(membership(components(graph_relation)))
+# centralité
+V(graph_relation)$centralite <- estimate_betweenness(graph_relation, cutoff = -1)
+
 V(graph_relation)$colorV <- "gray60"
 
-sd = SharedData$new(data.frame(Id = V(graph_relation)$name, Noms = V(graph_relation)$usual_name))
+temp_sd <- data.frame(Id = V(graph_relation)$name, Noms = V(graph_relation)$usual_name)
+temp_sd$Degré <- degree(graph_relation, v = V(graph_relation))
+temp_sd$Centralité <- round(V(graph_relation)$centralite, 2)
 
-bscols(
-    graphjs(graph_relation,
+sd = SharedData$new(temp_sd)
+
+
+graphjs(graph_relation,
             vertex.label = paste(V(graph_relation)$usual_name, V(graph_relation)$name), # il faut usual name
             vertex.color = V(graph_relation)$colorV, # il faut colorV
             vertex.size = 0.2, # pe modifier par degree
             brush=TRUE, 
             crosstalk=sd, 
-            width=450),
-    datatable(sd, rownames=FALSE, options=list(dom='tp'), width=450)
-)
+            width=450)
+
+datatable(sd, rownames=FALSE, options=list(dom='tp'), width=450)
+
+
+rm(temp_sd)
+
 ```
 
