@@ -19,7 +19,10 @@ library(dplyr) # manip données
 library(ggplot2) #  graphiques
 library(plotly) # graphiques un peu interactif
 library(sf)
-library(igraph)
+library(igraph) 
+library(crosstalk) # lier des graphs/tableau
+library(threejs) # visu 3d 
+library(DT) # widget de table
 ```
 
 
@@ -150,15 +153,19 @@ graph_relation <- graph.data.frame(relation, directed = FALSE)
 comps <- components(graph_relation)
 ```
 
-Pour les points suivants je n'ai pas gardé les `hiérarchique asc. Ecole` ni les `hiérarchique ascendante` car elles doublonnaient avec leur vis à vis descendantes. On obtient `r comps$no` composantes connexes.
+Pour les points suivants je n'ai pas gardé les `hiérarchique asc. Ecole` ni les `hiérarchique ascendante` car elles doublonnaient avec leur vis à vis descendantes. On obtient `r comps$no` composantes connexes. Le tableau \@ref(tab:compconexe) recense les composantes connexes en fonction de leur taille.
+
+(ref:compconexe-caption) Nombre de composantes connexes par leur taille 
+
+```{r, compconexe, fig.align="center"}
+knitr::kable(table(comps$csize), col.names = c("Taille des composantes", "Nombres de composantes"), caption = "(ref:compconexe-caption)",format = "html", table.attr = "style='width:50%;'")
+```
+
 
 
 ```{r, fig.align="center"}
-library(crosstalk)
-library(threejs)
-library(DT)
 
-
+# ici on fait un fichier pour avoir les idimplantation et leurs noms, c'est un besoin pour qualifier les vertex
 partA <- relation %>% 
     select(idimplantation, usual_name)
 
@@ -169,6 +176,8 @@ idimpl_nom <- relation %>%
 
 rm(partA)
 
+# c'est ici la magie qui permet d'aller chercher les idimplantion/noms dans idimpl et de les mettre dans le meme ordre 
+# que les vertices du graph, bien verifier le comportement de match
 vertex_v1 <-  idimpl_nom[match(unique(c(relation$idimplantation, relation$fklinked_implantation)), 
                                idimpl_nom$idimplantation),]
 
@@ -177,15 +186,16 @@ graph_relation <- graph.data.frame(relation, directed = FALSE, vertices = vertex
 V(graph_relation)$comps <- as.numeric(membership(components(graph_relation)))
 # centralité
 V(graph_relation)$centralite <- estimate_betweenness(graph_relation, cutoff = -1)
-
+# couleur grise pour les nodes
 V(graph_relation)$colorV <- "gray60"
 
+# création et renfonrcement d'un df pour l'objet sharedData
 temp_sd <- data.frame(Id = V(graph_relation)$name, Noms = V(graph_relation)$usual_name)
 temp_sd$Degré <- degree(graph_relation, v = V(graph_relation))
 temp_sd$Centralité <- round(V(graph_relation)$centralite, 2)
 
+# on passe en shared data pour partager le brush de graphjs et un DT
 sd = SharedData$new(temp_sd)
-
 
 graphjs(graph_relation,
             vertex.label = paste(V(graph_relation)$usual_name, V(graph_relation)$name), # il faut usual name
@@ -193,10 +203,9 @@ graphjs(graph_relation,
             vertex.size = 0.2, # pe modifier par degree
             brush=TRUE, 
             crosstalk=sd, 
-            width=450)
+            width=800)
 
-datatable(sd, rownames=FALSE, options=list(dom='tp'), width=450)
-
+datatable(sd, rownames=FALSE,  width=800)
 
 rm(temp_sd)
 
