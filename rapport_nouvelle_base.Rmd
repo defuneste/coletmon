@@ -23,6 +23,7 @@ library(igraph)
 library(crosstalk) # lier des graphs/tableau
 library(threejs) # visu 3d 
 library(DT) # widget de table
+library(waffle) # pie chart en gauffre
 ```
 
 
@@ -31,6 +32,7 @@ library(DT) # widget de table
 Faut-il prendre en compte un T0new + 1 et un T0new ? 
 
 Plutôt que de reprendre le script de production de `conception_t0relation.R`, je suis parti d'un import spécifique. La première raison est de vouloir garder les doublons idimplantations --- fklinked_implantations car ici il est prévu de poduire les statistiques decriptives sur un pas de temps de 100 ans permettant vraisemblablement d'éviter les doublons. La seconde raison est de travailler avec une colonne geometry uniquement au besoin pour alléger les calculs et éviter l'utilisation de méthodes pour ces objets pas toutes optimisées. Enfin, il y a des relations dont l'implantation n'a pas de lat/lng. 
+
 
 ```{r import_donnee}
 #source("conception_t0relation.R")
@@ -99,7 +101,7 @@ degre_gobale_type <- as.data.frame.matrix(t(table(implantation_relation$modaNiv1
 degre_gobale_type$Degré <- row.names(degre_gobale_type)
 
 cat("<Tableau>",paste0("<caption>", "(#tab:degregobaletype)", ' Contingences d\'implantations par degré et type de relation', "</caption>"),"</tableau>", sep ="\n")
-DT::datatable(degre_gobale_type)
+DT::datatable(degre_gobale_type , rownames = FALSE)
 ```
 
 ## Stats des durées par type
@@ -113,7 +115,7 @@ T0relation_sans_NA <- T0relation[!is.na(T0relation),] %>%
 ```
 
 
-Il y a `r nrow(T0relation_sans_NA[T0relation_sans_NA$durée != 0,])` relations ou la durée est nulle. Les autres cas sont representés par la figure \@ref(fig:durremodalite). (attention on doublone pour les relations hiérarchiques)
+Il y a `r nrow(T0relation_sans_NA[T0relation_sans_NA$durée != 0,])` relations ou la durée est nulle. Les autres cas sont representés par la figure \@ref(fig:durremodalite). (attention on doublonne pour les relations hiérarchiques)
 
 
 (ref:durremodalite) Boites à moustaches des durées en fonction des modalités de relation
@@ -140,9 +142,7 @@ layout(yaxis = y)
 
 ## Composantes connexes 
 
-id_vertex_prim : correspond aux vertexes (idimplantation) avec le plus haut degré dans la composantes connexes. En cas d'egalité, suivez mon regard les reseaux de deux vertexes, c'est le premier qui est pris. 
-
-```{r}
+```{r compconnexe1}
 # filtre des ascendantes
 relation <- subset(T0relation, !(T0relation$modaNiv1 == "hiérarchique asc. Ecole" | T0relation$modaNiv1 == "hiérarchique ascendante") ) %>% 
     # attention c'est important d'avoir les deux premières colonnes qui indiquent les liens A ---- B 
@@ -153,12 +153,18 @@ graph_relation <- graph.data.frame(relation, directed = FALSE)
 # components renvoie une liste comportant le nombre de composantes connexes, la taille de chacune d'entre elles et l'appartenance ds 
 # vertex, $membership est utile pour savoir a quelle comp connexe apartient un vertex
 comps_vertex <- components(graph_relation)
+```
+
+
+Pour les points suivants je n'ai pas gardé les `hiérarchique asc. Ecole` ni les `hiérarchique ascendante` car elles doublonnaient avec leur vis à vis descendantes. On obtient `r comps_vertex$no` composantes connexes. Le tableau \@ref(tab:compconne2) les recense en fonction de leur taille (nombre de vertex et liens ou diamètre) et la figure \@ref(fig:taillecompconnexe) montre la proportion du nombre de liens occupée par ces composantes connexes. id_vertex_prim : correspond aux vertexes (idimplantation) avec le plus haut degré dans la composantes connexes. En cas d'egalité, suivez mon regard les reseaux de deux vertex, c'est le premier qui est pris. 
+
+```{r compconne2, , results='asis'}
+
 # decompose.graph divise le graph principal en sous graph par composantes connexes et les renvoies sous forme de liste
 comps <- decompose.graph(graph_relation)
-comps_synthese <- data.frame(id_comps = 1:comps_vertex$no, Nb_vertex = sapply(comps, vcount))
-comps_synthese <- data.frame(id_comps = 1:comps_vertex$no, Nb_vertex = sapply(comps, vcount))
+comps_synthese <- data.frame(Id_comps = 1:comps_vertex$no, Nb_vertex = sapply(comps, vcount))
 comps_synthese$Nb_liens <- sapply(comps, ecount)
-comps_synthese$diametre <- sapply(comps, diameter)
+comps_synthese$Diamètre <- sapply(comps, diameter)
 
 plus_gros_vertex <- function(un_graph) {
 un_Id <- which(degree(un_graph) == max(degree(un_graph)))
@@ -166,19 +172,41 @@ V(un_graph)[un_Id]}
 
 comps_synthese$Id_vertex_prim <- names(sapply(sapply(comps, plus_gros_vertex), `[`, 1)) 
 
-DT::datatable(comps_synthese)
+comps_synthese <- comps_synthese %>% 
+    mutate(Taille_réseau = case_when(
+                            Nb_vertex > 100 ~ "]100+ vertex",
+                            Nb_vertex <= 100 & Nb_vertex > 25 ~ "]25;100] vertex",
+                            Nb_vertex <= 25 & Nb_vertex > 10 ~ "]10;25] vertex",
+                            Nb_vertex <= 10 & Nb_vertex > 5 ~ "]5;10] vertex",
+                            Nb_vertex <= 5 & Nb_vertex > 2 ~ "]2;5] vertex",
+                            Nb_vertex == 2 ~ "2 vertex"))
+
+
+cat("<Tableau>",paste0("<caption>", "(#tab:compconne2)", ' Les compossantes connexes et leurs principales caractéristiques', "</caption>"),"</tableau>", sep ="\n")
+DT::datatable(comps_synthese, rownames = FALSE)
 
 ```
 
-Pour les points suivants je n'ai pas gardé les `hiérarchique asc. Ecole` ni les `hiérarchique ascendante` car elles doublonnaient avec leur vis à vis descendantes. On obtient `r comps$no` composantes connexes. Le tableau \@ref(tab:compconexe) recense les composantes connexes en fonction de leur taille.
+(ref:taillecompconnexe) Repartition (en %) du nombre de liens par taille de réseau
 
-(ref:compconexe-caption) Nombre de composantes connexes par leur taille 
+```{r taillecompconnexe, fig.cap="(ref:taillecompconnexe)", fig.align="center"}
+type_reseau <- comps_synthese %>%
+    group_by(Taille_réseau) %>% 
+    summarize(total_edge = sum(Nb_liens)) %>% 
+    mutate(percent_edge = round(total_edge/sum(total_edge),2)*100)
 
-```{r, compconexe, fig.align="center"}
-#knitr::kable(table(comps$csize), col.names = c("Taille des composantes", "Nombres de composantes"), caption = "(ref:compconexe-caption)",format = "html", table.attr = "style='width:50%;'")
+type_reseau$Taille_réseau <- factor(type_reseau$Taille_réseau, levels = c("2 vertex", "]2;5] vertex", "]5;10] vertex", "]10;25] vertex", "]25;100] vertex", "]100+ vertex"),ordered = TRUE)
+
+proportion_reseau <- type_reseau$percent_edge[c(6, 3, 5, 1, 4, 2)]
+names(proportion_reseau) <- type_reseau$Taille_réseau[c(6, 3, 5, 1, 4, 2)]
+
+waffle::waffle(proportion_reseau, 5, legend_pos = "bottom", xlab = "1 carré = 1% de liens")
+    
 ```
 
-## Exploration du graph
+
+
+## Exploration du graphe
 
 
 ```{r, fig.align="center"}
@@ -226,7 +254,7 @@ graphjs(graph_relation,
             crosstalk=sd, 
             width=800)
 
-datatable(sd, rownames=FALSE,  width=800)
+datatable(sd, rownames = FALSE,  width = 800)
 
 rm(temp_sd)
 
