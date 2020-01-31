@@ -4,7 +4,6 @@ author: "olivier-Helene"
 date: "22 janvier 2020"
 output: 
     bookdown::html_document2:
-        keep_md: true
         theme: readable
         toc: true
         toc_float: true
