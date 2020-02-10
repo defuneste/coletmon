@@ -83,11 +83,11 @@ knitr::kable(t(table(T0relation$modaNiv1)),
              caption = "(ref:modalite-caption)")
 ```
 
-La figure \@ref(fig:date-modalite) regroupe les relations par un pas de temps de 100 ans pour les trois modalités : hiérarchique descendante, Relation horizontale et hiérarchique desc. Ecole. 
+La figure \@ref(fig:date-modalite) regroupe les relations sur un pas de temps de 100 ans pour les trois modalités : hiérarchique descendante, Relation horizontale et hiérarchique desc. Ecole. 
 
 (ref:date-modalite) Répartition des dates de début par tranches de 100 ans en fonction des modes d'agrégation 
 
-```{r, date-modalite, fig.cap="(ref:date-modalite)", fig.align='center', warning=FALSE}
+```{r, date-modalite, fig.cap="(ref:date-modalite)",  warning=FALSE}
 # date de début car moins de pb que fin
 # attention les couleurs sont en durs
 modalite_h_descendante <- ggplot(T0relation[T0relation$modaNiv1 == "hiérarchique descendante",], aes(date_startC)) +
@@ -194,7 +194,23 @@ relation <- subset(T0relation, !(T0relation$modaNiv1 == "hiérarchique asc. Ecol
     select(idimplantation, fklinked_implantation, usual_name, linked_implantation_name,modaNiv1, idfactoid)
 
 #graph
-graph_relation <- graph.data.frame(relation, directed = FALSE)
+partA <- relation %>% 
+    select(idimplantation, usual_name)
+
+idimpl_nom <- relation %>% 
+    select(idimplantation = fklinked_implantation, usual_name = linked_implantation_name) %>% 
+    bind_rows(partA) %>% 
+    distinct(idimplantation, .keep_all = TRUE)
+
+rm(partA)
+
+# c'est ici la magie qui permet d'aller chercher les idimplantion/noms dans idimpl et de les mettre dans le meme ordre 
+# que les vertices du graph, bien verifier le comportement de match
+vertex_v1 <-  idimpl_nom[match(unique(c(relation$idimplantation, relation$fklinked_implantation)), 
+                               idimpl_nom$idimplantation),]
+
+graph_relation <- graph.data.frame(relation, directed = FALSE, vertices = vertex_v1)
+
 # components renvoie une liste comportant le nombre de composantes connexes, la taille de chacune d'entre elles et l'appartenance ds 
 # vertex, $membership est utile pour savoir a quelle comp connexe apartient un vertex
 comps_vertex <- components(graph_relation)
@@ -203,17 +219,20 @@ comps_vertex <- components(graph_relation)
 
 Pour les points suivants je n'ai pas gardé les `hiérarchique asc. Ecole` ni les `hiérarchique ascendante` car elles doublonnaient avec leur vis à vis descendantes. On obtient `r comps_vertex$no` composantes connexes. Le tableau \@ref(tab:compconne2) les recense en fonction de leur taille (nombre de vertex et liens ou diamètre) et la figure \@ref(fig:taillecompconnexe) montre la proportion du nombre de liens occupée par ces composantes connexes. id_vertex_prim : correspond aux vertexes (idimplantation) avec le plus haut degré dans la composantes connexes. En cas d'egalité, suivez mon regard les reseaux de deux vertex, c'est le premier qui est pris. 
 
-```{r compconne2, , results='asis'}
-
+```{r compconne2,  results='asis'}
 # decompose.graph divise le graph principal en sous graph par composantes connexes et les renvoies sous forme de liste
 comps <- decompose.graph(graph_relation)
 comps_synthese <- data.frame(Id_comps = 1:comps_vertex$no, Nb_vertex = sapply(comps, vcount))
 comps_synthese$Nb_liens <- sapply(comps, ecount)
 comps_synthese$Diamètre <- sapply(comps, diameter)
 
+# une fonction pour connaitre l'id d'un graph avec le plus haut degre
 plus_gros_vertex <- function(un_graph) {
+# on va chercher l'id
 un_Id <- which(degree(un_graph) == max(degree(un_graph)))
-V(un_graph)[un_Id]}
+# on le retourne
+V(un_graph)[un_Id]
+}
 
 comps_synthese$Id_vertex_prim <- names(sapply(sapply(comps, plus_gros_vertex), `[`, 1)) 
 
@@ -225,6 +244,9 @@ comps_synthese <- comps_synthese %>%
                             Nb_vertex <= 10 & Nb_vertex > 5 ~ "]5;10] vertex",
                             Nb_vertex <= 5 & Nb_vertex > 2 ~ "]2;5] vertex",
                             Nb_vertex == 2 ~ "2 vertex"))
+
+comps_synthese <- comps_synthese %>% 
+    select(Id_vertex_prim, Nb_vertex, Nb_liens, Taille_réseau,-Id_comps)
 
 
 cat("<Tableau>",paste0("<caption>", "(#tab:compconne2)", ' Les compossantes connexes et leurs principales caractéristiques', "</caption>"),"</tableau>", sep ="\n")
