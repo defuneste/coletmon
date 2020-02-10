@@ -74,13 +74,58 @@ rm(CaracHist)
 
 ## Modalité des relations
 
-On obtient `r nrow(T0relation)` factoides avec une `relation`. Le tableau \@ref(tab:modalite) donne les frequences par type de liens (`modaNiv1`). Les relations peuvent être hiérarchiques ou horizontales, dans les cas hiérarchique, elles peuvent être ascendantes et descendantes. Elles peuvent ensuite être ascendantes/descendantes vers une école ou vers un autre type d'implantations. 
+On obtient `r nrow(T0relation)` factoides avec une `relation`. Le tableau \@ref(tab:modalite) donne les fréquences par type de liens (`modaNiv1`). Les relations peuvent être hiérarchiques ou horizontales, dans les cas hiérarchique, elles peuvent être ascendantes et descendantes. Elles peuvent ensuite être ascendantes/descendantes vers une école ou vers un autre type d'implantations. 
 
 (ref:modalite-caption) Distribution des fréquences par type de liens
 
 ```{r, modalite}
 knitr::kable(t(table(T0relation$modaNiv1)),
              caption = "(ref:modalite-caption)")
+```
+
+La figure \@ref(fig:date-modalite) regroupe les relations par un pas de temps de 100 ans pour les trois modalités : hiérarchique descendante, Relation horizontale et hiérarchique desc. Ecole. 
+
+(ref:date-modalite) Répartition des dates de début par tranches de 100 ans en fonction des modes d'agrégation 
+
+```{r, date-modalite, fig.cap="(ref:date-modalite)", fig.align='center', warning=FALSE}
+# date de début car moins de pb que fin
+# attention les couleurs sont en durs
+modalite_h_descendante <- ggplot(T0relation[T0relation$modaNiv1 == "hiérarchique descendante",], aes(date_startC)) +
+    geom_freqpoly(binwidth = 100, colour = "#3182bd") + 
+    labs(x = "", y = "") +
+    theme_bw()
+
+modalite_r_horizontale <- ggplot(T0relation[T0relation$modaNiv1 == "Relation horizontale",], aes(date_startC)) +
+    geom_freqpoly(binwidth = 100, colour = "#31a354") + 
+    labs(x = "", y = "") +
+    theme_bw()
+
+modalite_h_ecole <- ggplot(T0relation[T0relation$modaNiv1 == "hiérarchique desc. Ecole",], aes(date_startC)) +
+    geom_freqpoly(binwidth = 100, colour = "#dd1c77") + 
+    labs(x = "", y = "") +
+    theme_bw()
+
+# c'est du js
+f <- list(
+  family = "Courier New, monospace",
+  size = 18,
+  color = "#7f7f7f"
+)
+x <- list(
+  title = "date_startC (pas de 100 ans)",
+  titlefont = f
+)
+y <- list(
+  title = "décompte",
+  titlefont = f
+)
+subplot(ggplotly(modalite_h_descendante) %>% 
+    layout(xaxis = x, yaxis = y),
+    ggplotly(modalite_r_horizontale) %>% 
+    layout(xaxis = x, yaxis = y),
+        ggplotly(modalite_h_ecole) %>% 
+    layout(xaxis = x, yaxis = y))
+    
 ```
 
 
