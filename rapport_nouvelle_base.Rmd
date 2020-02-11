@@ -234,7 +234,10 @@ un_Id <- which(degree(un_graph) == max(degree(un_graph)))
 V(un_graph)[un_Id]
 }
 
+
 comps_synthese$Id_vertex_prim <- names(sapply(sapply(comps, plus_gros_vertex), `[`, 1)) 
+
+comps_synthese$Usual_name <- idimpl_nom$usual_name[match(comps_synthese$Id_vertex_prim, idimpl_nom$idimplantation)]
 
 comps_synthese <- comps_synthese %>% 
     mutate(Taille_réseau = case_when(
@@ -246,7 +249,7 @@ comps_synthese <- comps_synthese %>%
                             Nb_vertex == 2 ~ "2 vertex"))
 
 comps_synthese <- comps_synthese %>% 
-    select(Id_vertex_prim, Nb_vertex, Nb_liens, Taille_réseau,-Id_comps)
+    select(Id_vertex_prim, Usual_name, Nb_vertex, Nb_liens, Taille_réseau,-Id_comps)
 
 
 cat("<Tableau>",paste0("<caption>", "(#tab:compconne2)", ' Les compossantes connexes et leurs principales caractéristiques', "</caption>"),"</tableau>", sep ="\n")
