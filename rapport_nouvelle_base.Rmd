@@ -125,6 +125,7 @@ subplot(ggplotly(modalite_h_descendante) %>%
     layout(xaxis = x, yaxis = y),
         ggplotly(modalite_h_ecole) %>% 
     layout(xaxis = x, yaxis = y))
+rm(modalite_h_descendante, modalite_r_horizontale, modalite_h_ecole, f, x, y)
     
 ```
 
@@ -147,6 +148,7 @@ degre_gobale_type$Degré <- row.names(degre_gobale_type)
 
 cat("<Tableau>",paste0("<caption>", "(#tab:degregobaletype)", ' Contingences d\'implantations par degré et type de relation', "</caption>"),"</tableau>", sep ="\n")
 DT::datatable(degre_gobale_type , rownames = FALSE)
+rm(degre_gobale_type)
 ```
 
 ## Stats des durées par type
@@ -182,6 +184,8 @@ T0relation_sans_NA <- T0relation_sans_NA[T0relation_sans_NA$durée != 0,]
 plot_ly(T0relation_sans_NA, y = ~durée, color = ~modaNiv1, type = "box", colors = ColRelations$modaNiv1_Color, 
         text = paste(T0relation_sans_NA$usual_name, T0relation_sans_NA$modalite, T0relation_sans_NA$linked_implantation, sep = "\n")) %>% 
 layout(yaxis = y)   
+
+rm(f, y)
 
 ```
 
@@ -234,9 +238,10 @@ un_Id <- which(degree(un_graph) == max(degree(un_graph)))
 V(un_graph)[un_Id]
 }
 
-
+# le vertex le plus gros
 comps_synthese$Id_vertex_prim <- names(sapply(sapply(comps, plus_gros_vertex), `[`, 1)) 
 
+# son nom
 comps_synthese$Usual_name <- idimpl_nom$usual_name[match(comps_synthese$Id_vertex_prim, idimpl_nom$idimplantation)]
 
 comps_synthese <- comps_synthese %>% 
@@ -247,7 +252,7 @@ comps_synthese <- comps_synthese %>%
                             Nb_vertex <= 10 & Nb_vertex > 5 ~ "]5;10] vertex",
                             Nb_vertex <= 5 & Nb_vertex > 2 ~ "]2;5] vertex",
                             Nb_vertex == 2 ~ "2 vertex"))
-
+# reorganisation pour le visuel 
 comps_synthese <- comps_synthese %>% 
     select(Id_vertex_prim, Usual_name, Nb_vertex, Nb_liens, Taille_réseau,-Id_comps)
 
@@ -271,6 +276,7 @@ proportion_reseau <- type_reseau$percent_edge[c(6, 3, 5, 1, 4, 2)]
 names(proportion_reseau) <- type_reseau$Taille_réseau[c(6, 3, 5, 1, 4, 2)]
 
 waffle::waffle(proportion_reseau, 5, legend_pos = "bottom", xlab = "1 carré = 1% de liens")
+rm(type_reseau, proportion_reseau)
     
 ```
 

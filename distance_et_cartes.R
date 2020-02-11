@@ -152,38 +152,3 @@ jim <- leaflet() %>%
     addPolylines(data = shared_interval, lng = ~lng, lat = ~lat)
 
 bscols(bob, temps_distance) 
-
-#################test carto  avec une implantation
-centreid<-5   #"Auxerre"
-centreid<-1100   #"Abbaye de Charroux"
-
-TliensXi<-TliensX %>% 
-    filter(idimplantation==centreid) %>% 
-    select(-date_start_min:-date_stop_max)
-TliensXi<-arrange(TliensXi,idimplantation, modalite,idimpl_link)
-
-Temp<-filter(ungroup(ImplNew),idimplantation==centreid) %>% 
-    select(idimplantation,usual_name,lat,lng) %>% 
-    mutate(lat_link=lat,
-           lng_link=lng,
-           idimpl_link=idimplantation,
-           usual_name_link=usual_name)
-
-TliensXi <-TliensXi %>% 
-    filter(idimplantation==centreid)%>% 
-    filter(!is.na(lat_link)) %>% 
-    bind_rows(Temp)
-
-#Après avoir compilé les fonctions de Col&MonCarto
-#Avant d'envoyer à la procedure uil faut renommer les lat_link_>lat...
-TCartoLiens <-rename(TliensXi,
-                     lat0=lat,lng0=lng,lat=lat_link,lng=lng_link)
-TCartoLiens<-as.data.frame(TCartoLiens)
-
-nbtype<-length(unique(TCartoLiens$modalite))
-
-initmapview(nbtype,"Set1")
-m<-mapImplVite(TCartoLiens,"modalite")
-m
-mapshot(m, url = paste0(getwd(), "/AbbayeCharroux.html"))
-
