@@ -148,15 +148,16 @@ degre_gobale_type$Degré <- row.names(degre_gobale_type)
 
 cat("<Tableau>",paste0("<caption>", "(#tab:degregobaletype)", ' Contingences d\'implantations par degré et type de relation', "</caption>"),"</tableau>", sep ="\n")
 DT::datatable(degre_gobale_type , rownames = FALSE)
-rm(degre_gobale_type)
+rm(degre_gobale_type, implantation_relation)
 ```
 
 ## Stats des durées par type
 
 ```{r}
 # pour les durées il faut ne pas garder les NA dans date_start et stop et calculer 
-T0relation_sans_NA <- T0relation[!is.na(T0relation),] %>% 
-    # on fait une durée
+T0relation_sans_NA <- T0relation %>% 
+    filter(!is.na(date_startC)) %>% 
+    filter(!is.na(date_stopC)) %>% 
     mutate(durée = date_stopC - date_startC) %>% 
     filter(durée >=  0)
 ```
@@ -185,7 +186,7 @@ plot_ly(T0relation_sans_NA, y = ~durée, color = ~modaNiv1, type = "box", colors
         text = paste(T0relation_sans_NA$usual_name, T0relation_sans_NA$modalite, T0relation_sans_NA$linked_implantation, sep = "\n")) %>% 
 layout(yaxis = y)   
 
-rm(f, y)
+rm(f, y, T0relation_sans_NA)
 
 ```
 
@@ -332,7 +333,84 @@ graphjs(graph_relation,
 
 datatable(sd, rownames = FALSE,  width = 800)
 
-rm(temp_sd)
+rm(temp_sd, comps, comps_synthese, comps_vertex, vertex_v1, sd, relation)
 
 ```
+
+# Divisions temporelles
+
+```{r segmentationtemporelle}
+# on vire les NA 
+T0relation <- T0relation[!is.na(T0relation$date_startC),]
+
+#duplication par pas de temps
+T0relation_all <- merge(T0relation, 
+                        seq(0,1800,100),
+                        all = TRUE)
+# un nom plus cool 
+names(T0relation_all)[names(T0relation_all) == "y"] <-  "interval_inf"
+
+# interval_sup
+T0relation_all$interval_sup <- T0relation_all$interval_inf + 100
+
+# on fait un nouveau tableau ou existe une relation qui est dans la durée
+T0relation_filtre <- dplyr::filter(T0relation_all, interval_sup > date_startC) %>% 
+                        dplyr::filter(interval_inf <= date_stopC) %>% 
+                        dplyr::mutate(interval = (interval_inf + interval_sup)/2)
+
+# on refait un "relation" avec interval et prenant en compte des relations en plus 
+relation <- subset(T0relation_filtre, !(T0relation_filtre$modaNiv1 == "hiérarchique asc. Ecole" | T0relation_filtre$modaNiv1 == "hiérarchique ascendante") ) %>% 
+    # attention c'est important d'avoir les deux premières colonnes qui indiquent les liens A ---- B 
+    dplyr::select(idimplantation, fklinked_implantation, usual_name, linked_implantation_name, modaNiv1, interval, idfactoid) 
+
+# on refait un indice des vertexes
+
+partA <- relation %>% 
+    select(idimplantation, usual_name)
+
+idimpl_nom <- relation %>% 
+    select(idimplantation = fklinked_implantation, usual_name = linked_implantation_name) %>% 
+    bind_rows(partA) %>% 
+    distinct(idimplantation, .keep_all = TRUE)
+
+# c'est ici la magie qui permet d'aller chercher les idimplantion/noms dans idimpl et de les mettre dans le meme ordre 
+# que les vertices du graph, bien verifier le comportement de match
+vertex_v1 <-  idimpl_nom[match(unique(c(relation$idimplantation, relation$fklinked_implantation)), 
+                               idimpl_nom$idimplantation),]
+
+g.relation <- graph.data.frame(relation[, c("idimplantation", "fklinked_implantation", "interval", "modaNiv1")], vertices = vertex_v1, directed = FALSE)
+
+# un vecteur d'interval
+interval <-  sort(unique(T0relation_filtre$interval))[
+  1:length(unique(T0relation_filtre$interval))
+  ]/50
+
+### on applique un filtre en selectionnant les edges comprises dans un interval 
+# attention il y a un simplify brut à pe affiner
+g.relation.100 <- lapply(interval, function(i) {
+    g <- subgraph.edges(g.relation, E(g.relation)[interval > 50 * (i-1) &  interval <= 50 * i],
+                        delete.vertices=TRUE) # Ici il faut changer si on veut garder les vertexes sans lien 
+    # et fait un simplify
+    simplify(g)
+})
+
+rm(T0relation_all, partA, T0relation_filtre, vertex_v1)
+```
+
+En prenant un interval de 100 ans cenrtré sur 50 on obtient `r length(interval)` classes et l'on peut faire un graphe particulier pour chacune d'elles. Attention par defaut en cas d'egalité en degré je prend juste le premier vertex (Id_vertex_prim). 
+
+```{r tableauevolgraph}
+
+tableauevolgraph <- data.frame(Interval_temp = interval * 50, Id_vertex_prim = names(sapply(sapply(g.relation.100, plus_gros_vertex), `[`, 1)))
+tableauevolgraph$Usual_name <-  idimpl_nom$usual_name[match(tableauevolgraph$Id_vertex_prim, idimpl_nom$idimplantation)]
+tableauevolgraph$Nb_vertex <-  sapply(g.relation.100, vcount)
+tableauevolgraph$Nb_liens <- sapply(g.relation.100, ecount)
+tableauevolgraph$Diamètre <- sapply(g.relation.100, diameter)
+
+DT::datatable(tableauevolgraph, rownames = FALSE,  width = 800, options = list(pageLength = length(interval)))
+```
+
+
+
+
 

@@ -67,9 +67,6 @@ names(T0relation_all)[names(T0relation_all) == "y"] <-  "interval_inf"
 # interval_sup
 T0relation_all$interval_sup <- T0relation_all$interval_inf + 100
 
-# un filtre pour avoir sur le bon pas de temps
-T0relation_filtre <-  T0relation_all[T0relation_all$interval_sup > T0relation_all$date_startC & T0relation_all$interval_inf <= T0relation_all$date_stopC,]
-
 # on fait un nouveau tableau ou exite une relation qui est dans la durée
 T0relation_filtre <- dplyr::filter(T0relation_all, interval_sup > date_startC) %>% 
                         dplyr::filter(interval_inf <= date_stopC) %>% 
@@ -109,9 +106,6 @@ interval <-  sort(unique(T0relation_filtre$interval))[
   1:length(unique(T0relation_filtre$interval))
   ]/50
 
-1:length(unique(T0relation_filtre$interval))
-
-E(g.relation)[interval > 50 * (i-1) &  interval <= 50*i]
 
 ### a adapter 
 g.relation.100 <- lapply(interval, function(i) {
