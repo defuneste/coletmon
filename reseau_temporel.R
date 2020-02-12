@@ -77,16 +77,8 @@ T0relation_filtre <- dplyr::filter(T0relation_all, interval_sup > date_startC) %
 
 relation <- subset(T0relation_filtre, !(T0relation_filtre$modaNiv1 == "hiérarchique asc. Ecole" | T0relation_filtre$modaNiv1 == "hiérarchique ascendante") ) %>% 
     # attention c'est important d'avoir les deux premières colonnes qui indiquent les liens A ---- B 
-    dplyr::select(idimplantation, fklinked_implantation, usual_name, linked_implantation_name,modaNiv1, interval, idfactoid) 
+    dplyr::select(idimplantation, fklinked_implantation, usual_name, linked_implantation_name, modaNiv1, interval, idfactoid) 
 
-
-vids <- sort(unique(c(hc$ID1, hc$ID2)))
-
-
-
-data.frame(vids)
-
-g.week <- graph.data.frame(hc[,c("ID1", "ID2", "Time")], vertices = data.frame(vids), directed = FALSE)
 
 partA <- relation %>% 
     select(idimplantation, usual_name)
@@ -103,7 +95,7 @@ rm(partA)
 vertex_v1 <-  idimpl_nom[match(unique(c(relation$idimplantation, relation$fklinked_implantation)), 
                                idimpl_nom$idimplantation),]
 
-g.relation <- graph.data.frame(relation[, c("idimplantation", "fklinked_implantation", "interval")], vertices = vertex_v1, directed = FALSE)
+g.relation <- graph.data.frame(relation[, c("idimplantation", "fklinked_implantation", "interval", "modaNiv1")], vertices = vertex_v1, directed = FALSE)
 
 graphjs(g.relation,
         vertex.label = V(g.relation)$name, # il faut usual name
@@ -113,13 +105,33 @@ graphjs(g.relation,
         #crosstalk=sd, 
         width=800)
 
-unique(T0relation_filtre$interval)
+interval <-  sort(unique(T0relation_filtre$interval))[
+  1:length(unique(T0relation_filtre$interval))
+  ]/50
+
+1:length(unique(T0relation_filtre$interval))
+
+E(g.relation)[interval > 50 * (i-1) &  interval <= 50*i]
 
 ### a adapter 
-g.relation.100 <- lapply(1:8, function(i) {
-    g <- subgraph(g.week, E(g.week)[Time > 12*(i-1) &  Time <= 12*i],
-                        delete.vertices=FALSE)
+g.relation.100 <- lapply(interval, function(i) {
+    g <- subgraph.edges(g.relation, E(g.relation)[interval > 50 * (i-1) &  interval <= 50*i],
+                        delete.vertices=FALSE) # je pense garder pour avoir l'impression de rajout uoi que c'est pas dit
     # et fait un simplify
     simplify(g)
 })
+
+g.relation.100[1]
+
+graphjs(g.relation.100[[9]],
+        vertex.label = V(g.relation.100[[9]])$name, # il faut usual name
+        #vertex.color = V(graph_relation)$colorV, # il faut colorV
+        vertex.size = 0.2, # pe modifier par degree
+        brush=TRUE, 
+        #crosstalk=sd, 
+        width=800)
+
+sapply(g.relation.100, ecount)
+
+sapply(g.relation.100, diameter)
 
