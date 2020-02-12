@@ -399,7 +399,7 @@ rm(T0relation_all, partA, T0relation_filtre, vertex_v1)
 
 En prenant un interval de 100 ans cenrtré sur 50 on obtient `r length(interval)` classes et l'on peut faire un graphe particulier pour chacune d'elles.
 
-Attention, Id_vertex_prim et Usual_name indique le Vertex avec le plus haut degré et par defaut en cas d'egalité en degré je prend juste le premier vertex (Id_vertex_prim). Ici c'est pour l'ensemble du graphe et pas comme plus haut dans une composante connexe. 
+Attention, Id_vertex_prim et Usual_name indique le Vertex avec le plus haut degré et par defaut en cas d'egalité en degré je prend juste le premier vertex (Id_vertex_prim). Ici, c'est pour l'ensemble du graphe et pas comme plus haut dans une composante connexe. 
 
 ```{r tableauevolgraph}
 

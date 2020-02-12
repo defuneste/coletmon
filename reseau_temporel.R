@@ -31,6 +31,15 @@ g.sl12 <- lapply(1:8, function(i) {
             simplify(g)
  })
 
+library("networkDynamic") # attention masque un paquet de truc de igraph
+
+ hc.spls <- cbind((hc$Time-20)/(60*60),  hc$Time/(60*60), hc$ID1, hc$ID2)
+ hc.dn <- networkDynamic(edge.spells=hc.spls)
+ 
+ detach(package:networkDynamic)
+
+
+
 ### on peut adapater au rapport
 
  
