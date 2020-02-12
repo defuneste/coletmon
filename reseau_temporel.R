@@ -110,15 +110,15 @@ interval <-  sort(unique(T0relation_filtre$interval))[
 ### a adapter 
 g.relation.100 <- lapply(interval, function(i) {
     g <- subgraph.edges(g.relation, E(g.relation)[interval > 50 * (i-1) &  interval <= 50*i],
-                        delete.vertices=FALSE) # je pense garder pour avoir l'impression de rajout uoi que c'est pas dit
+                        delete.vertices=TRUE) # je pense garder pour avoir l'impression de rajout uoi que c'est pas dit
     # et fait un simplify
     simplify(g)
 })
 
 g.relation.100[1]
 
-graphjs(g.relation.100[[9]],
-        vertex.label = V(g.relation.100[[9]])$name, # il faut usual name
+graphjs(g.relation.100[[7]],
+        vertex.label = V(g.relation.100[[7]])$name, # il faut usual name
         #vertex.color = V(graph_relation)$colorV, # il faut colorV
         vertex.size = 0.2, # pe modifier par degree
         brush=TRUE, 
@@ -128,4 +128,9 @@ graphjs(g.relation.100[[9]],
 sapply(g.relation.100, ecount)
 
 sapply(g.relation.100, diameter)
+
+#attention si delete.vertices = FALSE compte les vertex seul comme une comp connexe
+sapply(g.relation.100, count_components)
+
+components(graph_relation)
 

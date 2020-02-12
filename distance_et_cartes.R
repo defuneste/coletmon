@@ -91,7 +91,6 @@ implantations_slim <- implantation.dat %>%
 geo <- list(
     scope = 'europe')
 
-
 plot_geo() %>%
     add_markers(
         data = implantations_slim, x = ~lng, y = ~lat, text = ~paste(idimplantation, usual_name),
@@ -136,15 +135,12 @@ geo_relation <- plot_geo() %>%
 hist_relation <- plot_ly(shared_interval, x = ~interval_sup) %>% add_histogram()
 temps_distance <- plot_ly(shared_interval, x = ~interval_sup, y = ~ distance_km) %>% add_markers()
 
-
-
 bob <- filter_slider("dist", "Distance", shared_interval, column=~distance_km, step=50, width=250)
 
 subplot(hist_relation, geo_relation) %>% 
     highlight(on = "plotly_click")
 
 ###### leaflet solution 
-
 
 jim <- leaflet() %>% 
     addTiles() %>%

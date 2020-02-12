@@ -397,16 +397,18 @@ g.relation.100 <- lapply(interval, function(i) {
 rm(T0relation_all, partA, T0relation_filtre, vertex_v1)
 ```
 
-En prenant un interval de 100 ans cenrtré sur 50 on obtient `r length(interval)` classes et l'on peut faire un graphe particulier pour chacune d'elles. Attention par defaut en cas d'egalité en degré je prend juste le premier vertex (Id_vertex_prim). 
+En prenant un interval de 100 ans cenrtré sur 50 on obtient `r length(interval)` classes et l'on peut faire un graphe particulier pour chacune d'elles.
+
+Attention, Id_vertex_prim et Usual_name indique le Vertex avec le plus haut degré et par defaut en cas d'egalité en degré je prend juste le premier vertex (Id_vertex_prim). Ici c'est pour l'ensemble du graphe et pas comme plus haut dans une composante connexe. 
 
 ```{r tableauevolgraph}
 
-tableauevolgraph <- data.frame(Interval_temp = interval * 50, Id_vertex_prim = names(sapply(sapply(g.relation.100, plus_gros_vertex), `[`, 1)))
-tableauevolgraph$Usual_name <-  idimpl_nom$usual_name[match(tableauevolgraph$Id_vertex_prim, idimpl_nom$idimplantation)]
+tableauevolgraph <- data.frame(Interval_temp = interval * 50, Nb_comp = sapply(g.relation.100, count_components))
 tableauevolgraph$Nb_vertex <-  sapply(g.relation.100, vcount)
 tableauevolgraph$Nb_liens <- sapply(g.relation.100, ecount)
 tableauevolgraph$Diamètre <- sapply(g.relation.100, diameter)
-
+tableauevolgraph$Id_vertex_prim <- names(sapply(sapply(g.relation.100, plus_gros_vertex), `[`, 1))
+tableauevolgraph$Usual_name <-  idimpl_nom$usual_name[match(tableauevolgraph$Id_vertex_prim, idimpl_nom$idimplantation)]
 DT::datatable(tableauevolgraph, rownames = FALSE,  width = 800, options = list(pageLength = length(interval)))
 ```
 
