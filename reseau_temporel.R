@@ -3,46 +3,6 @@
 # deux trois conventions 
 # V(t) = V pour tout les temps t
 
-library("sand")
-data(hc)
-View(hc)
-
-head(hc)
-
-hist(hc$Time)
-
-vids <- sort(unique(c(hc$ID1, hc$ID2)))
-
-data.frame(vids)
-
-g.week <- graph.data.frame(hc[,c("ID1", "ID2", "Time")], vertices = data.frame(vids), directed = FALSE)
-
-E(g.week)$Time <- E(g.week)$Time / (60*60)
-
-status <- unique(rbind(data.frame(id=hc$ID1, status=hc$S1), data.frame(id=hc$ID2, status=hc$S2)))
-V(g.week)$Status <-  as.character(status[order(status[,1]),2])
-
-# on passe par une fonction qui fait des sous graphs 
-
-g.sl12 <- lapply(1:8, function(i) {
-        g <- subgraph.edges(g.week, E(g.week)[Time > 12*(i-1) &  Time <= 12*i],
-                                   delete.vertices=FALSE)
-# et fait un simplify
-            simplify(g)
- })
-
-library("networkDynamic") # attention masque un paquet de truc de igraph
-
- hc.spls <- cbind((hc$Time-20)/(60*60),  hc$Time/(60*60), hc$ID1, hc$ID2)
- hc.dn <- networkDynamic(edge.spells=hc.spls)
- 
- detach(package:networkDynamic)
-
-
-
-### on peut adapater au rapport
-
- 
 T0relation <- readRDS("data/T0Newchgt20200122.rds") %>% 
     # filtre sur les relations
     filter(caracNew == "Relations") %>% 
@@ -126,13 +86,17 @@ g.relation.100 <- lapply(interval, function(i) {
 
 g.relation.100[1]
 
-graphjs(g.relation.100[[7]],
-        vertex.label = V(g.relation.100[[7]])$name, # il faut usual name
+# un pas de temps prends un undex de la liste g.relation.100
+
+un_graph_dans_le_temps <- function(un_pas_de_temps) {
+graphjs(g.relation.100[[un_pas_de_temps]],
+        vertex.label = V(g.relation.100[[un_pas_de_temps]])$name, # il faut usual name
         #vertex.color = V(graph_relation)$colorV, # il faut colorV
         vertex.size = 0.2, # pe modifier par degree
         brush=TRUE, 
         #crosstalk=sd, 
-        width=800)
+        width=800) # a modifier si le but n'est plus de mettre dans un rapport 
+  }
 
 sapply(g.relation.100, ecount)
 
@@ -141,5 +105,4 @@ sapply(g.relation.100, diameter)
 #attention si delete.vertices = FALSE compte les vertex seul comme une comp connexe
 sapply(g.relation.100, count_components)
 
-components(graph_relation)
 
