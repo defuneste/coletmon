@@ -47,7 +47,6 @@ vertex_v1 <-  idimpl_nom[match(unique(c(relation$tail, relation$head)),
                                idimpl_nom$tail),]
 
 graph_relation <- graph.data.frame(relation, directed = FALSE, vertices = vertex_v1)
-comps <- decompose.graph(graph_relation)
 
 count_multiple(graph_relation)
 relation[which_multiple(graph_relation),] %>% 
@@ -57,14 +56,21 @@ relation$multiple<- count_multiple(graph_relation)
 
 relation_multiple <- relation[relation$multiple > 1,] %>% 
     arrange(tail)
-openxlsx::write.xlsx(file = "relation_multiple.xlsx", relation_multiple)
 
+# cas relation horizontale : simplify 
+# cas date diff : min pour date_startC et max pour date_stopC
+# idem pour chevauchement
+# cas changement : prendre first ? et documenter ?
 
-sapply(comps, vcount)
+graph_relation
+
+graph_relation_simpl <- simplify(graph_relation, edge.attr.comb = list(onset = "min", terminus = "max", "ignore"))
+
+# openxlsx::write.xlsx(file = "relation_multiple.xlsx", relation_multiple)
+
+comps <- decompose.graph(graph_relation_simpl)
 
 cluny <- comps[[3]]
-    
-E(cluny)$onset[which_multiple(cluny)]
 
 cluny_net <- asNetwork(cluny)
 
