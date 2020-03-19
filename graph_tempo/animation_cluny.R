@@ -23,6 +23,16 @@ T0relation <- readRDS("data/T0Newchgt20200122.rds") %>%
          date_stopC # date de fin de la relation
   )
 
+CaracHist <-readxl::read_excel("data/NewModelCaracModalitesColor5.xlsx",
+                               sheet = "color")
+ColRelations <- filter(CaracHist, caracNew == "Relations") %>% 
+    select(modaNiv1, modaNiv1_Color) %>% 
+    filter(!is.na(modaNiv1_Color)) %>% 
+    distinct(modaNiv1, .keep_all = TRUE) %>% 
+    arrange(modaNiv1)
+
+T0relation <- T0relation %>% 
+    left_join(ColRelations, by ="modaNiv1")
 
 T0relation <- T0relation[!is.na(T0relation$date_startC),]
 T0relation <- T0relation[!is.na(T0relation$date_stopC),]
@@ -30,7 +40,9 @@ T0relation <- T0relation[!is.na(T0relation$date_stopC),]
 
 relation <- subset(T0relation, !(T0relation$modaNiv1 == "hiérarchique asc. Ecole" | T0relation$modaNiv1 == "hiérarchique ascendante") ) %>% 
   # attention c'est important d'avoir les deux premières colonnes qui indiquent les liens A ---- B 
-  dplyr::select(tail = idimplantation, head = fklinked_implantation,  onset = date_startC, terminus = date_stopC, modaNiv1, usual_name, linked_implantation_name) 
+  dplyr::select(tail = idimplantation, head = fklinked_implantation,  onset = date_startC, terminus = date_stopC, modaNiv1_Color, usual_name, linked_implantation_name) %>% 
+  dplyr::mutate(dure = terminus - onset) %>% 
+  dplyr::filter(dure >= 0)    
 
 
 partA <- relation %>% 
@@ -64,7 +76,10 @@ relation_multiple <- relation[relation$multiple > 1,] %>%
 
 graph_relation
 
-graph_relation_simpl <- simplify(graph_relation, edge.attr.comb = list(onset = "min", terminus = "max", "ignore"))
+graph_relation_simpl <- simplify(graph_relation, edge.attr.comb = list(onset = "min", terminus = "max", modaNiv1_Color = "first", "ignore"))
+
+
+E(graph_relation_simpl)$modaNiv1_Color
 
 # openxlsx::write.xlsx(file = "relation_multiple.xlsx", relation_multiple)
 
@@ -74,36 +89,43 @@ cluny <- comps[[3]]
 
 cluny_net <- asNetwork(cluny)
 
+
+
 library(networkDynamic) # attention masque un paquet de truc de igraph
 library(ndtv)
 
-clunny_net %e% "date_startC"
 
-vs <- data.frame(onset=0, terminus=50, vertex.id=1:17)
-es <- data.frame(onset=1:49, terminus=50, 
-                 head=as.matrix(net3, matrix.type="edgelist")[,1],
-                 tail=as.matrix(net3, matrix.type="edgelist")[,2])
+# vertex
+vs <- data.frame(onset = 0, terminus = 1792, vertex.id=1:length(cluny_net %v% "vertex.names"), name = cluny_net %v% "vertex.names")
+dim(vs)
 
-cluny_dyn <- networkDynamic(cluny_net)
+# edge spells
+es <- data.frame(onset = cluny_net %e% "onset",
+                 terminus = cluny_net %e% "terminus",
+                 head = as.matrix(cluny_net, matrix.type="edgelist")[,1],
+                 tail = as.matrix(cluny_net, matrix.type="edgelist")[,2])
+dim(es)
 
-
-render.d3movie(cluny_dyn, usearrows = F, displaylabels = F)
-
-
-
-
-# les packages pour faire des graphs d'animation 
+cluny_dyn <- networkDynamic(cluny_net, edge.spells = es, vertex.spells = vs)
 
 
+compute.animation(cluny_dyn, animation.mode = "kamadakawai",
+                  slice.par=list(start=0, end=1800, interval=50, 
+                                 aggregate.dur=50, rule='any'))
 
 
-hc.spls <- cbind((hc$Time-20)/(60*60),  hc$Time/(60*60), hc$ID1, hc$ID2)
-hc.dn <- networkDynamic(edge.spells=hc.spls)
+render.d3movie(cluny_dyn, usearrows = F, displaylabels = F, 
+               label = cluny_dyn %v% "usual_name",
+               # vertex
+               vertex.border = "#adadad",
+               vertex.col = "#adadad",
+               vertex.tooltip = paste("<b> usual_name :</b>", (cluny_dyn %v% "usual_name") , "<br>",
+                                      "<b>Degré:</b>", (degree(cluny_dyn))),
+               vertex.cex = log(degree(cluny_dyn))/10, 
+               # edge
+               edge.col = (cluny_dyn %e% "modaNiv1_Color"),  
+               edge.lwd = 2)
 
-wheel <- network.initialize(10)
-add.edges.active(wheel,tail=1:9,head=c(2:9,1),onset=1:9, terminus=11)
-add.edges.active(wheel,tail=10,head=c(1:9),onset=10, terminus=12)
-plot(wheel)
 
 
 detach(package:ndtv)
